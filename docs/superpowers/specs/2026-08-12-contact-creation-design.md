@@ -12,7 +12,7 @@ This slice changes contact creation and navigation only. Task creation, general 
 
 ### Navigation
 
-The persistent five-item navigation becomes Home, Map, Accounts, Contacts, and Route. Contacts is reachable in one tap on mobile and desktop. Dashboard remains available from the Profile/tools menu so the field workflow stays compact without losing access.
+The persistent five-item navigation becomes Map, Accounts, Contacts, Route, and Dashboard. Contacts and Dashboard are each reachable in one tap on mobile and desktop. Home moves into the Profile/tools menu and remains directly accessible there.
 
 The app shell also exposes a compact quick-action control containing Add contact and Add task. Add task can continue routing to its existing quick-create URL until issue #36 supplies its form.
 
@@ -131,7 +131,8 @@ The account-detail sheet only supplies the account identifier and opens the reus
 
 ### Browser tests
 
-- Contacts is reachable in one tap from primary navigation;
+- Contacts and Dashboard are reachable in one tap from primary navigation;
+- Home is reachable from the Profile/tools menu;
 - Add contact opens from Contacts and account detail;
 - account detail locks the correct account;
 - required-field and email errors are visible and accessible;

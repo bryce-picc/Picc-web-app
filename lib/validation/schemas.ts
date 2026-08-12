@@ -21,6 +21,27 @@ export const contactSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
 });
 
+const notionPageIdSchema = z
+  .string()
+  .trim()
+  .regex(
+    /^(?:[0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
+    'Invalid Notion page ID',
+  );
+
+export const notionContactCreateSchema = z.object({
+  accountPageId: notionPageIdSchema,
+  name: z.string().trim().min(1).max(160),
+  position: z.string().trim().min(1).max(160),
+  email: z.string().trim().email().max(320).nullable(),
+  phone: z.string().trim().max(40).nullable(),
+});
+
+export const notionContactRetrySchema = z.object({
+  accountPageId: notionPageIdSchema,
+  contactPageId: notionPageIdSchema,
+});
+
 export const quickLogSchema = z.object({
   accountId: z.string().cuid(),
   title: z.string().min(2).max(200),

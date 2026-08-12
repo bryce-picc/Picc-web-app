@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildContactCreatePayload,
+  contactCreateMessage,
+  filterContactAccounts,
+} from '@/lib/contacts/contact-create-model';
+
+const accounts = [
+  { notionPageId: 'a', name: 'Gotham Buds', city: 'New York', state: 'NY' },
+  { notionPageId: 'b', name: 'Alta Dispensary', city: 'Astoria', state: 'NY' },
+];
+
+describe('contact create UI model', () => {
+  it('finds accounts by name and location without changing source order', () => {
+    expect(filterContactAccounts(accounts, 'astoria').map((account) => account.notionPageId)).toEqual(['b']);
+    expect(filterContactAccounts(accounts, '')).toEqual(accounts);
+  });
+
+  it('trims required fields and converts blank optional fields to null', () => {
+    expect(
+      buildContactCreatePayload({
+        accountPageId: ' account-id ',
+        name: ' Maya Chen ',
+        position: ' Buyer ',
+        email: ' ',
+        phone: ' 212-555-0187 ',
+      }),
+    ).toEqual({
+      accountPageId: 'account-id',
+      name: 'Maya Chen',
+      position: 'Buyer',
+      email: null,
+      phone: '212-555-0187',
+    });
+  });
+
+  it('uses honest confirmation copy for verified, duplicate, and partial outcomes', () => {
+    expect(contactCreateMessage('created_verified')).toContain('created and linked');
+    expect(contactCreateMessage('existing_verified')).toContain('already existed');
+    expect(contactCreateMessage('partial_relation')).toContain('could not verify');
+  });
+});

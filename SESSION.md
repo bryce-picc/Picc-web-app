@@ -1,53 +1,63 @@
-# Session: Micro Bar buyer-facing copy and CTA correction
+# Session: Verified contact creation and Contacts navigation
 
 ## Issue
 
-- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/153
+- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/155
 
 ## Branch
 
-- `codex/microbar-buyer-copy`
+- `codex/155-contacts`
 
 ## Scope
 
-- Revise `/microbar` copy for educated New York dispensary buyers.
-- Replace invented product one-liners with real Micro Bar product descriptions from supplied brand/menu materials.
-- Remove on-page ordering language and keep buyer CTAs focused on:
-  - live Micro Bar Nabis marketplace profile
-  - direct Bryce email contact
-- Preserve the current visual direction and Micro Bar brand assets.
-
-## Domain Constraint
-
-- Keep `piccnewyork.org/microbar` as the live app route for now.
-- Do not change the root `piccnewyork.com` redirect; it should continue going to `piccnewyork.notion.site`.
-- Future work may add a path-only redirect from `piccnewyork.com/microbar` to this page, but this session does not mutate DNS or domain routing.
+- Make Contacts directly reachable as a section tab inside Accounts.
+- Keep Home, Map, Accounts, Route, and Dashboard in persistent navigation.
+- Keep Home accessible from the Profile/tools menu.
+- Add one reusable contact-creation experience to the Contacts page.
+- Create contacts through the existing external CRM boundary.
+- Prevent account-scoped duplicates, preserve existing relationships, and verify the completed relationship before reporting success.
+- Provide honest, retryable partial-failure behavior.
 
 ## Out Of Scope
 
-- On-page cart, checkout, order builder, or marketplace ordering flow.
-- Authenticated PICC app shell changes.
-- Territory, account, calendar, Nabis, Notion, Supabase, Clerk, or production data changes.
-- Backend writes, schema migrations, DNS edits, or redirect configuration changes.
-- Private PICC operating intelligence in public copy.
+- Task creation UI, which remains tracked by issue #36.
+- Mobile bundle optimization, which remains tracked by issue #94.
+- Remote branch and stale PR cleanup, which remains tracked by issue #39.
+- Bulk imports, historical relation repair, CRM schema changes, production backfills, or destructive data operations.
+- Publishing private workspace IDs, tokens, or tenant-specific operating details.
 
 ## Owned Paths
 
-- `app/microbar/**`
+- `app/(main)/accounts/page.tsx`
+- `app/(main)/contacts/**`
+- `app/api/contacts/**`
+- `components/crm/accounts-section-tabs.tsx`
+- `components/crm/contact-create-flow.tsx`
+- `components/layout/app-shell.tsx`
+- `lib/contacts/contact-create-model*`
+- `lib/server/contact-creation*`
+- `lib/server/notion-contact-creation*`
+- `lib/server/notion-live-crm.ts`
+- `lib/validation/schemas.ts`
+- focused tests and browser artifacts for the above paths
+- `docs/superpowers/specs/2026-08-12-contact-creation-design.md`
+- `docs/superpowers/plans/2026-08-12-contact-creation.md`
 - `SESSION.md`
 
 ## Active PR Overlap Check
 
-- Checked open PRs #144, #135, and #82.
-- No overlapping owned path globs found.
+- PR #135 overlaps `components/mobile/account-detail-sheet.tsx`; this branch does not edit that path.
+- PRs #144 and #82 were checked and do not own the implemented paths.
 
 ## Validation Plan
 
-- Run `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`.
-- Use Browser for rendered validation.
-- Verify `/microbar` loads publicly, is nonblank, has no framework overlay, and responds to product/filter/CTA interactions.
-- Capture desktop and mobile screenshots.
+- Use RED-first unit and route tests for duplicate prevention, relationship preservation, verification, partial failure, retry, validation, and authorization.
+- Run focused tests after each behavior slice.
+- Run `npm run verify` under Node 22.
+- Run browser tests for the Contacts page, Accounts tabs, persistent navigation, Profile menu, form states, and 390x844 mobile viewport.
+- Use fakes or route interception for external writes during automated/browser validation. Do not create production contacts as test data.
 
-## TDD Note
+## Production Boundary
 
-This is a static public marketing-copy and CTA correction using existing Next.js patterns and supplied product descriptions. A RED unit test is not practical for visual copy/layout; browser validation is the primary behavior proof.
+- Live schema inspection was read-only and explicitly approved.
+- No production CRM writes, schema changes, backfills, or destructive actions are authorized for validation.

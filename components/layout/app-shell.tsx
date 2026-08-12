@@ -34,6 +34,9 @@ const defaultTabs: NavTab[] = [
 ];
 
 function isActive(pathname: string, href: string) {
+  if (href === '/accounts' && (pathname === '/contacts' || pathname.startsWith('/contacts/'))) {
+    return true;
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -101,6 +104,10 @@ export function AppShell({
                     Current Role
                     <div className="mt-1 text-sm font-semibold text-[#18212d]">{roleLabel(access.role)}</div>
                   </div>
+                  <Link href="/home" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#243040] hover:bg-[#f3f6fb]">
+                    <House className="h-4 w-4" />
+                    Home
+                  </Link>
                   <Link href="/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#243040] hover:bg-[#f3f6fb]">
                     <Settings className="h-4 w-4" />
                     Settings

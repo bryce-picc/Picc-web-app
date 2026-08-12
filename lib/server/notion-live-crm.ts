@@ -479,6 +479,10 @@ export async function loadLiveNotionContacts(): Promise<ContactTableRow[]> {
   return contacts.rows.map(toContactTableRow);
 }
 
+export async function refreshLiveNotionContactsCache() {
+  await getCachedContacts({ refresh: true });
+}
+
 export async function loadLiveNotionContactsWithMeta(): Promise<{
   rows: RuntimeContactSummary[];
   meta: ContactsFreshnessMeta;

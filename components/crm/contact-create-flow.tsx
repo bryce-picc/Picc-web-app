@@ -35,6 +35,9 @@ export function ContactCreateFlow({ accounts }: { accounts: ContactAccountOption
   const requestedAccount = searchParams.get('account') ?? '';
   const [open, setOpen] = useState(requestedOpen);
   const [draft, setDraft] = useState({ ...emptyDraft, accountPageId: requestedAccount });
+  const [availableAccounts, setAvailableAccounts] = useState(accounts);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [accountsRequested, setAccountsRequested] = useState(false);
   const [accountSearch, setAccountSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ContactResponse | null>(null);
@@ -44,11 +47,33 @@ export function ContactCreateFlow({ accounts }: { accounts: ContactAccountOption
     if (requestedOpen) setOpen(true);
   }, [requestedOpen]);
 
+  async function loadAccountsIfNeeded() {
+    if (availableAccounts.length > 0 || loadingAccounts || accountsRequested) return;
+    setAccountsRequested(true);
+    setLoadingAccounts(true);
+    try {
+      const response = await fetch('/api/runtime/account-contact');
+      if (!response.ok) throw new Error('Accounts could not be loaded.');
+      const payload = (await response.json()) as { accounts?: ContactAccountOption[] };
+      setAvailableAccounts(payload.accounts ?? []);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Accounts could not be loaded.');
+    } finally {
+      setLoadingAccounts(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAccountsIfNeeded();
+    // This only runs when the server-rendered runtime could not provide accounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountsRequested, availableAccounts.length, loadingAccounts]);
+
   const filteredAccounts = useMemo(
-    () => filterContactAccounts(accounts, accountSearch).slice(0, 60),
-    [accountSearch, accounts],
+    () => filterContactAccounts(availableAccounts, accountSearch).slice(0, 60),
+    [accountSearch, availableAccounts],
   );
-  const selectedAccount = accounts.find((account) => account.notionPageId === draft.accountPageId);
+  const selectedAccount = availableAccounts.find((account) => account.notionPageId === draft.accountPageId);
 
   function changeOpen(nextOpen: boolean) {
     setOpen(nextOpen);
@@ -118,6 +143,7 @@ export function ContactCreateFlow({ accounts }: { accounts: ContactAccountOption
       <Dialog.Trigger asChild>
         <button
           type="button"
+          onClick={() => void loadAccountsIfNeeded()}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#c93412] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(201,52,18,0.22)] transition hover:bg-[#ad2d0e] active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
@@ -177,7 +203,9 @@ export function ContactCreateFlow({ accounts }: { accounts: ContactAccountOption
                       <input value={accountSearch} onChange={(event) => setAccountSearch(event.target.value)} placeholder="Search dispensary or city" className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-[#9aa2ad]" />
                     </label>
                     <div className="max-h-44 overflow-y-auto p-1.5">
-                      {filteredAccounts.length ? filteredAccounts.map((account) => (
+                      {loadingAccounts ? (
+                        <p className="flex items-center justify-center gap-2 px-3 py-6 text-sm text-[#77818f]"><Loader2 className="h-4 w-4 animate-spin" /> Loading accounts…</p>
+                      ) : filteredAccounts.length ? filteredAccounts.map((account) => (
                         <button key={account.notionPageId} type="button" onClick={() => setDraft((current) => ({ ...current, accountPageId: account.notionPageId }))} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[#f1f4f8]">
                           <span className="truncate text-sm font-medium text-[#253142]">{account.name}</span>
                           <span className="shrink-0 text-xs text-[#7a8492]">{[account.city, account.state].filter(Boolean).join(', ')}</span>

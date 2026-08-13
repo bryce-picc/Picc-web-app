@@ -28,6 +28,8 @@ interface TerritoryMapMobileProps {
   focusRequestToken: number;
   routeCoordinates: [number, number][];
   pinColorMode: PinColorMode;
+  showSubwayLines?: boolean;
+  onSubwayLinesUnavailable?: () => void;
   onSelectStore: (id: string | null) => void;
   onDraftBoundaryChange?: (coordinates: [number, number][]) => void;
   onSelectionBoundaryChange?: (coordinates: [number, number][]) => void;
@@ -56,6 +58,8 @@ export function TerritoryMapMobile({
   focusRequestToken,
   routeCoordinates,
   pinColorMode,
+  showSubwayLines = false,
+  onSubwayLinesUnavailable,
   onSelectStore,
   onDraftBoundaryChange,
   onSelectionBoundaryChange,
@@ -83,6 +87,8 @@ export function TerritoryMapMobile({
       locationRequestToken={locationRequestToken}
       routeCoordinates={routeCoordinates}
       pinColorMode={pinColorMode}
+      showSubwayLines={showSubwayLines}
+      onSubwayLinesUnavailable={onSubwayLinesUnavailable}
       cameraMode="manual-focus"
       focusRequestToken={focusRequestToken}
       fitPadding={24}

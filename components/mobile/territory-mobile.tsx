@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAppAccess } from '@/components/auth/app-access-provider';
@@ -30,6 +30,7 @@ import type { TerritoryStorePin } from '@/lib/territory/types';
 import { getTerritoryMapSearchSuggestions } from '@/lib/territory/map-search-suggestions';
 import { clearSavedTerritoryFilters, countActiveTerritoryFilters, loadSavedTerritoryFilters, persistSavedTerritoryFilters, type TerritorySavedFiltersPayload } from '@/lib/territory/filter-storage';
 import { useRoutePlan } from '@/lib/territory/route-plan-client';
+import { getBrowserLocalStorage, loadSubwayLinesPreference, persistSubwayLinesPreference } from '@/lib/territory/subway-lines';
 
 const TerritoryMapMobile = dynamic(
   () => import('@/components/mobile/territory-map-mobile').then((module) => module.TerritoryMapMobile),
@@ -103,6 +104,7 @@ export function TerritoryMobile() {
   const [lastOrderDateFilter, setLastOrderDateFilter] = useState<'all' | 'last_month' | 'last_2_months' | 'three_plus_months'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [showMapSearch, setShowMapSearch] = useState(false);
+  const [showSubwayLines, setShowSubwayLines] = useState(false);
   const [pinColorMode, setPinColorMode] = useState<PinColorMode>('status');
   const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
   const [draftReps, setDraftReps] = useState<string[]>([]);
@@ -129,6 +131,24 @@ export function TerritoryMobile() {
   const [lassoDrawingMode, setLassoDrawingMode] = useState(false);
   const [lassoSelectedIds, setLassoSelectedIds] = useState<string[]>([]);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  useEffect(() => {
+    setShowSubwayLines(loadSubwayLinesPreference(getBrowserLocalStorage(window)));
+  }, []);
+
+  const toggleSubwayLines = useCallback(() => {
+    setShowSubwayLines((current) => {
+      const next = !current;
+      persistSubwayLinesPreference(getBrowserLocalStorage(window), next);
+      return next;
+    });
+  }, []);
+
+  const handleSubwayLinesUnavailable = useCallback(() => {
+    setShowSubwayLines(false);
+    persistSubwayLinesPreference(getBrowserLocalStorage(window), false);
+    toast.error('Subway lines are unavailable in Google Maps right now.');
+  }, []);
 
   useEffect(() => {
     try {
@@ -730,6 +750,8 @@ export function TerritoryMobile() {
               focusRequestToken={focusRequestToken}
               routeCoordinates={routeCoordinates}
               pinColorMode={pinColorMode}
+              showSubwayLines={showSubwayLines}
+              onSubwayLinesUnavailable={handleSubwayLinesUnavailable}
               repColorMap={repColorMap}
               onSelectStore={setFocusedId}
               onDraftBoundaryChange={(coordinates) =>
@@ -787,6 +809,8 @@ export function TerritoryMobile() {
             onCenterCurrentLocation={centerOnCurrentLocation}
             onRefreshData={() => setRefreshNonce((value) => value + 1)}
             onToggleMapSearch={() => setShowMapSearch((current) => !current)}
+            showSubwayLines={showSubwayLines}
+            onToggleSubwayLines={toggleSubwayLines}
             onOpenBoundarySheet={() => setShowBoundarySheet(true)}
             onOpenMyMapsExport={() => setShowMyMapsExport(true)}
             showBoundaries={showBoundaries}

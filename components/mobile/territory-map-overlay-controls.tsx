@@ -1,6 +1,6 @@
 'use client';
 
-import { Crosshair, Download, Filter, Layers3, RefreshCw, Search } from 'lucide-react';
+import { Crosshair, Download, Filter, Layers3, RefreshCw, Search, TrainFront } from 'lucide-react';
 import { MobileSearch } from '@/components/mobile/mobile-search';
 import type { TerritoryStorePin } from '@/lib/territory/types';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,8 @@ interface TerritoryMapOverlayControlsProps {
   onCenterCurrentLocation: () => void;
   onRefreshData: () => void;
   onToggleMapSearch: () => void;
+  showSubwayLines: boolean;
+  onToggleSubwayLines: () => void;
   onOpenBoundarySheet: () => void;
   onOpenMyMapsExport: () => void;
   showBoundaries: boolean;
@@ -69,6 +71,8 @@ export function TerritoryMapOverlayControls({
   onCenterCurrentLocation,
   onRefreshData,
   onToggleMapSearch,
+  showSubwayLines,
+  onToggleSubwayLines,
   onOpenBoundarySheet,
   onOpenMyMapsExport,
   showBoundaries,
@@ -292,6 +296,19 @@ export function TerritoryMapOverlayControls({
           onClick={onToggleMapSearch}
         >
           <Search className={cn('h-5 w-5', showMapSearch || mapSearch.trim().length > 0 ? 'text-[#cd3814]' : 'text-[#7f828a]')} />
+        </button>
+        <button
+          type="button"
+          aria-label={showSubwayLines ? 'Hide subway lines' : 'Show subway lines'}
+          title={showSubwayLines ? 'Hide subway lines' : 'Show subway lines'}
+          aria-pressed={showSubwayLines}
+          className={cn(
+            'picc-soft-transition grid h-10 w-10 place-items-center rounded-lg bg-white/90 shadow hover:bg-white active:scale-[0.94]',
+            showSubwayLines ? 'ring-2 ring-[#cd3814]' : '',
+          )}
+          onClick={onToggleSubwayLines}
+        >
+          <TrainFront className={cn('h-5 w-5', showSubwayLines ? 'text-[#cd3814]' : 'text-[#7f828a]')} />
         </button>
         <button
           type="button"

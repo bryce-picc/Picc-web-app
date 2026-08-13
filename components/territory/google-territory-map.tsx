@@ -8,6 +8,7 @@ import { GoogleTerritoryMarkers, GoogleTerritoryMarkersFallback } from '@/compon
 import { pinColorForStore, pinGlyphColorForStore, pinGlyphForStore, type PinColorMode } from '@/lib/territory/pin-colors';
 import type { GoogleMyMapsViewportBounds } from '@/lib/territory/google-my-maps-export';
 import type { TerritoryBoundary, TerritoryMarker, TerritoryStorePin } from '@/lib/territory/types';
+import { attachTransitLayer, createTransitLayer, type TransitMapsApi } from '@/lib/territory/subway-lines';
 import { cn } from '@/lib/utils';
 
 export type MapCameraMode = 'follow-selection' | 'manual-focus';
@@ -33,6 +34,8 @@ interface GoogleTerritoryMapProps {
   locationRequestToken?: number;
   routeCoordinates: [number, number][];
   pinColorMode?: PinColorMode;
+  showSubwayLines?: boolean;
+  onSubwayLinesUnavailable?: () => void;
   onSelectStore: (storeId: string | null) => void;
   onDraftBoundaryChange?: (coordinates: [number, number][]) => void;
   onSelectionBoundaryChange?: (coordinates: [number, number][]) => void;
@@ -63,7 +66,7 @@ type GooglePolyline = {
   setMap: (map: null) => void;
 };
 
-type GoogleMapsApi = {
+type GoogleMapsApi = TransitMapsApi & {
   Polyline: new (options: {
     map: unknown;
     geodesic: boolean;
@@ -169,6 +172,22 @@ function RouteLine({ routeCoordinates }: { routeCoordinates: [number, number][] 
       }
     };
   }, [map, routeCoordinates]);
+
+  return null;
+}
+
+function SubwayLayer({ enabled, onUnavailable }: { enabled: boolean; onUnavailable?: () => void }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!enabled || !map) return;
+    const layer = createTransitLayer(getGoogleMapsApi());
+    if (!layer) {
+      onUnavailable?.();
+      return;
+    }
+    return attachTransitLayer(layer, map);
+  }, [enabled, map, onUnavailable]);
 
   return null;
 }
@@ -410,6 +429,8 @@ export function GoogleTerritoryMap({
   locationRequestToken,
   routeCoordinates,
   pinColorMode = 'status',
+  showSubwayLines = false,
+  onSubwayLinesUnavailable,
   onSelectStore,
   onDraftBoundaryChange,
   onSelectionBoundaryChange,
@@ -643,6 +664,7 @@ export function GoogleTerritoryMap({
           <CurrentLocationController currentLocation={currentLocation} locationRequestToken={locationRequestToken} />
           <ViewportBoundsController onViewportBoundsChange={onViewportBoundsChange} />
           <RouteLine routeCoordinates={routeCoordinates} />
+          <SubwayLayer enabled={showSubwayLines} onUnavailable={onSubwayLinesUnavailable} />
           <GoogleTerritoryBoundaries
             boundaries={boundaries}
             showBoundaries={showBoundaries}

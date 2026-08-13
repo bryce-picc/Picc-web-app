@@ -151,3 +151,13 @@ test('keeps the subway control reachable on a mobile viewport', async ({ page })
   await expect(page.getByRole('button', { name: 'Open territory layers' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open filters' })).toBeVisible();
 });
+
+test('places subway directly underneath filters', async ({ page }) => {
+  await page.goto('/territory');
+  const filtersBox = await page.getByRole('button', { name: 'Open filters' }).boundingBox();
+  const subwayBox = await page.getByRole('button', { name: 'Show subway lines' }).boundingBox();
+  expect(filtersBox).not.toBeNull();
+  expect(subwayBox).not.toBeNull();
+  expect(subwayBox!.y).toBeGreaterThan(filtersBox!.y + filtersBox!.height);
+  expect(Math.abs(subwayBox!.x + subwayBox!.width / 2 - (filtersBox!.x + filtersBox!.width / 2))).toBeLessThan(1);
+});

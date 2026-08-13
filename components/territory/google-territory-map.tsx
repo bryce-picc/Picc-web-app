@@ -8,7 +8,7 @@ import { GoogleTerritoryMarkers, GoogleTerritoryMarkersFallback } from '@/compon
 import { pinColorForStore, pinGlyphColorForStore, pinGlyphForStore, type PinColorMode } from '@/lib/territory/pin-colors';
 import type { GoogleMyMapsViewportBounds } from '@/lib/territory/google-my-maps-export';
 import type { TerritoryBoundary, TerritoryMarker, TerritoryStorePin } from '@/lib/territory/types';
-import { attachTransitLayer, createTransitLayer, type TransitMapsApi } from '@/lib/territory/subway-lines';
+import { createSubwayOverlayController, loadSubwayOverlay, type SubwayMapsApi } from '@/lib/territory/subway-lines';
 import { cn } from '@/lib/utils';
 
 export type MapCameraMode = 'follow-selection' | 'manual-focus';
@@ -63,17 +63,15 @@ type RoutePoint = { lat: number; lng: number };
 
 type GooglePolyline = {
   setPath: (path: RoutePoint[]) => void;
-  setMap: (map: null) => void;
+  setMap: (map: unknown | null) => void;
+  setOptions: (options: { strokeWeight: number }) => void;
 };
 
-type GoogleMapsApi = TransitMapsApi & {
-  Polyline: new (options: {
-    map: unknown;
-    geodesic: boolean;
-    strokeColor: string;
-    strokeOpacity: number;
-    strokeWeight: number;
-  }) => GooglePolyline;
+type GoogleMapsApi = {
+  Polyline: new (options: Record<string, unknown>) => GooglePolyline;
+  Marker: NonNullable<SubwayMapsApi['Marker']>;
+  Size: NonNullable<SubwayMapsApi['Size']>;
+  Point: NonNullable<SubwayMapsApi['Point']>;
   LatLngBounds: typeof google.maps.LatLngBounds;
 };
 
@@ -156,6 +154,7 @@ function RouteLine({ routeCoordinates }: { routeCoordinates: [number, number][] 
         strokeColor: '#20a8ff',
         strokeOpacity: 0.9,
         strokeWeight: 5,
+        zIndex: 30,
       });
     }
 
@@ -176,17 +175,34 @@ function RouteLine({ routeCoordinates }: { routeCoordinates: [number, number][] 
   return null;
 }
 
-function SubwayLayer({ enabled, onUnavailable }: { enabled: boolean; onUnavailable?: () => void }) {
+function BoldSubwayOverlay({ enabled, onUnavailable }: { enabled: boolean; onUnavailable?: () => void }) {
   const map = useMap();
 
   useEffect(() => {
     if (!enabled || !map) return;
-    const layer = createTransitLayer(getGoogleMapsApi());
-    if (!layer) {
-      onUnavailable?.();
-      return;
-    }
-    return attachTransitLayer(layer, map);
+    let cancelled = false;
+    let cleanup = () => {};
+
+    void loadSubwayOverlay().then((data) => {
+      if (cancelled) return;
+      const mapsApi = getGoogleMapsApi();
+      const controller = data ? createSubwayOverlayController(mapsApi, map, data) : null;
+      if (!controller) {
+        onUnavailable?.();
+        return;
+      }
+      controller.updateZoom(map.getZoom() ?? 9);
+      const zoomListener = map.addListener('zoom_changed', () => controller.updateZoom(map.getZoom() ?? 9));
+      cleanup = () => {
+        zoomListener.remove();
+        controller.destroy();
+      };
+    });
+
+    return () => {
+      cancelled = true;
+      cleanup();
+    };
   }, [enabled, map, onUnavailable]);
 
   return null;
@@ -664,7 +680,7 @@ export function GoogleTerritoryMap({
           <CurrentLocationController currentLocation={currentLocation} locationRequestToken={locationRequestToken} />
           <ViewportBoundsController onViewportBoundsChange={onViewportBoundsChange} />
           <RouteLine routeCoordinates={routeCoordinates} />
-          <SubwayLayer enabled={showSubwayLines} onUnavailable={onSubwayLinesUnavailable} />
+          <BoldSubwayOverlay enabled={showSubwayLines} onUnavailable={onSubwayLinesUnavailable} />
           <GoogleTerritoryBoundaries
             boundaries={boundaries}
             showBoundaries={showBoundaries}

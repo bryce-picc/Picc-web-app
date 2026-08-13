@@ -34,7 +34,7 @@
 - Produces `SubwayOverlayData`, `SubwayRoutePath`, `SubwayStation`, `parseSubwayOverlayData(input)`, `subwayStrokeStyle(zoom)`, `visibleSubwayStations(stations, zoom)`, `offsetSubwayPath(path, laneOffsetMeters)`, and `subwayBadgeSvg(station, size)`.
 - `SubwayOverlayData` contains `source`, `generatedAt`, `routes`, and `stations`; each route has official `id`, `label`, `color`, `textColor`, `laneOffsetMeters`, and simplified `paths`.
 
-- [ ] **Step 1: Write failing domain tests**
+- [x] **Step 1: Write failing domain tests**
 
 Add tests that assert:
 
@@ -51,17 +51,17 @@ expect(subwayBadgeSvg(interchange, 22)).toContain('#0062CF');
 
 Also verify `offsetSubwayPath` preserves the point count, returns finite coordinates, and leaves the input unchanged for a zero-meter offset.
 
-- [ ] **Step 2: Run the focused test to prove RED**
+- [x] **Step 2: Run the focused test to prove RED**
 
 Run: `npm test -- lib/territory/subway-overlay.test.ts`
 
 Expected: FAIL because `@/lib/territory/subway-overlay` does not exist.
 
-- [ ] **Step 3: Implement the typed overlay domain module**
+- [x] **Step 3: Implement the typed overlay domain module**
 
 Implement strict runtime validation for finite NYC-area coordinates, hex colors, non-empty route IDs, and non-empty path arrays. Define exact zoom styling, station thresholds (`5+` routes through zoom 9, `3+` at zoom 10-11, `2+` at zoom 12-13, all at zoom 14+), a small equirectangular perpendicular offset in meters, XML-safe badge text, and a composite inline SVG strip with one official-colored badge per service.
 
-- [ ] **Step 4: Implement the reproducible GTFS generator**
+- [x] **Step 4: Implement the reproducible GTFS generator**
 
 Create a Node script that accepts an extracted GTFS directory and output path:
 
@@ -71,7 +71,7 @@ node scripts/generate-subway-overlay.mjs /tmp/picc-mta-gtfs public/data/nyc-subw
 
 It must parse quoted CSV safely, map `trip_id -> route_id/shape_id`, aggregate child stops to `parent_station`, calculate station service sets from `stop_times.txt`, select the longest shape for each unique route terminal pair, simplify paths with a 6-meter Douglas-Peucker tolerance, assign stable lane offsets by official route-color family, and include feed publisher/version metadata from `feed_info.txt`.
 
-- [ ] **Step 5: Generate and validate the asset**
+- [x] **Step 5: Generate and validate the asset**
 
 Extract the already downloaded official archive into `/tmp/picc-mta-gtfs`, run the generator, then verify:
 
@@ -81,7 +81,7 @@ node -e "const d=require('./public/data/nyc-subway-overlay.v1.json'); if(!d.rout
 
 Expected: non-zero routes and stations, official MTA source metadata, and a public asset small enough for a lazy browser fetch.
 
-- [ ] **Step 6: Run focused tests and commit**
+- [x] **Step 6: Run focused tests and commit**
 
 Run: `npm test -- lib/territory/subway-overlay.test.ts`
 
@@ -103,29 +103,29 @@ Commit: `feat: add normalized MTA subway overlay data`
 - Consumes `parseSubwayOverlayData`, `subwayStrokeStyle`, `visibleSubwayStations`, `offsetSubwayPath`, and `subwayBadgeSvg` from Task 1.
 - Produces `loadSubwayOverlay(fetcher)`, `createSubwayOverlayController(mapsApi, map, data)`, `controller.updateZoom(zoom)`, and `controller.destroy()`.
 
-- [ ] **Step 1: Replace native-layer tests with failing custom-controller tests**
+- [x] **Step 1: Replace native-layer tests with failing custom-controller tests**
 
 Use fakes for `Polyline`, `Marker`, `Size`, and `Point`. Assert that the controller creates two polylines per route path (dark casing followed by official route color), uses z-indexes below the driving route, creates non-clickable badge markers, updates weights and badge visibility on zoom change, and calls `setMap(null)` for every created object during cleanup.
 
 Add loader tests for HTTP failure, invalid JSON, and successful parsing.
 
-- [ ] **Step 2: Run the focused tests to prove RED**
+- [x] **Step 2: Run the focused tests to prove RED**
 
 Run: `npm test -- lib/territory/subway-lines.test.ts`
 
 Expected: FAIL because the custom loader/controller exports do not exist.
 
-- [ ] **Step 3: Implement the custom overlay controller**
+- [x] **Step 3: Implement the custom overlay controller**
 
 Keep the existing storage helpers unchanged. Remove the `TransitLayer` factory/attachment API. Add a cached fetch of `/data/nyc-subway-overlay.v1.json`, create casing and colored `google.maps.Polyline` objects with round visual treatment, create composite SVG `google.maps.Marker` badges, update styling and visibility from the current zoom, and make `destroy()` idempotent.
 
-- [ ] **Step 4: Wire the controller into the map lifecycle**
+- [x] **Step 4: Wire the controller into the map lifecycle**
 
 Replace `SubwayLayer` with `BoldSubwayOverlay`. When enabled, lazy-load the static asset, build one controller, apply the current zoom, and subscribe to `zoom_changed`. On disable/unmount, remove the listener and destroy the controller. On any load/render failure, clean up and call `onSubwayLinesUnavailable` so the existing state reset and toast remain authoritative.
 
 Set the driving `RouteLine` polyline `zIndex` above the subway casing and color strokes.
 
-- [ ] **Step 5: Run focused tests and commit**
+- [x] **Step 5: Run focused tests and commit**
 
 Run: `npm test -- lib/territory/subway-overlay.test.ts lib/territory/subway-lines.test.ts`
 
@@ -145,21 +145,21 @@ Commit: `feat: render bold MTA subway overlay`
 - Preserves `showSubwayLines` and `onToggleSubwayLines`; only control order changes.
 - Browser contract is Search -> Territory Layers -> Filters -> Subway.
 
-- [ ] **Step 1: Add a failing control-order assertion**
+- [x] **Step 1: Add a failing control-order assertion**
 
 Use locator bounding boxes to assert that `Open filters` is above `Show subway lines` and that their horizontal centers match. Retain the existing toggle state, reload persistence, mobile reachability, and route-visualization coexistence tests.
 
-- [ ] **Step 2: Run the focused Playwright test to prove RED**
+- [x] **Step 2: Run the focused Playwright test to prove RED**
 
 Run: `npx playwright test tests/e2e/territory-subway-lines.spec.ts`
 
 Expected: FAIL because Subway currently appears above Territory Layers and Filters.
 
-- [ ] **Step 3: Move the Subway control**
+- [x] **Step 3: Move the Subway control**
 
 Render the existing Subway button immediately after Filters in the right-side control stack. Do not change its icon, accessible action label, `aria-pressed`, or active ring.
 
-- [ ] **Step 4: Run focused browser tests and commit**
+- [x] **Step 4: Run focused browser tests and commit**
 
 Run: `npx playwright test tests/e2e/territory-subway-lines.spec.ts`
 
@@ -178,23 +178,23 @@ Commit: `fix: place subway control below filters`
 **Interfaces:**
 - Produces the final validation record and deployment evidence for PR #160.
 
-- [ ] **Step 1: Run full repository validation**
+- [x] **Step 1: Run full repository validation**
 
 Run: `npm run verify`
 
 Expected: lint, typecheck, Vitest, Prisma validation, and production build all pass.
 
-- [ ] **Step 2: Run the complete browser suite**
+- [x] **Step 2: Run the complete browser suite**
 
 Run: `npm run test:e2e`
 
 Expected: all Playwright tests pass.
 
-- [ ] **Step 3: Verify the real map visually**
+- [x] **Step 3: Verify the real map visually**
 
 Launch the worktree app with a configured Google Maps key, enable Subway at desktop and 390x844 mobile widths, and verify line thickness, casing, official colors, readable badges, Filters -> Subway placement, account-pin readability, gestures, route-overlay coexistence, disable cleanup, and reload persistence. Save desktop and mobile screenshots to the task visualization directory.
 
-- [ ] **Step 4: Self-review and update evidence**
+- [x] **Step 4: Self-review and update evidence**
 
 Review `git diff origin/main...HEAD`, run `git diff --check`, confirm no generated secret or raw 43 MB GTFS archive is committed, record asset byte size and source version in `SESSION.md`, and mark completed plan checkboxes.
 

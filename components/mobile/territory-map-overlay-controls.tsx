@@ -299,19 +299,6 @@ export function TerritoryMapOverlayControls({
         </button>
         <button
           type="button"
-          aria-label={showSubwayLines ? 'Hide subway lines' : 'Show subway lines'}
-          title={showSubwayLines ? 'Hide subway lines' : 'Show subway lines'}
-          aria-pressed={showSubwayLines}
-          className={cn(
-            'picc-soft-transition grid h-10 w-10 place-items-center rounded-lg bg-white/90 shadow hover:bg-white active:scale-[0.94]',
-            showSubwayLines ? 'ring-2 ring-[#cd3814]' : '',
-          )}
-          onClick={onToggleSubwayLines}
-        >
-          <TrainFront className={cn('h-5 w-5', showSubwayLines ? 'text-[#cd3814]' : 'text-[#7f828a]')} />
-        </button>
-        <button
-          type="button"
           aria-label="Open territory layers"
           title="Territory layers"
           className={cn(
@@ -334,6 +321,19 @@ export function TerritoryMapOverlayControls({
         >
           <Filter className={cn('h-5 w-5', activeFiltersCount > 0 ? 'text-[#cd3814]' : 'text-[#7f828a]')} />
           {activeFiltersCount > 0 ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#cd3814] px-1 text-[11px] font-semibold text-white">{activeFiltersCount}</span> : null}
+        </button>
+        <button
+          type="button"
+          aria-label={showSubwayLines ? 'Hide subway lines' : 'Show subway lines'}
+          title={showSubwayLines ? 'Hide subway lines' : 'Show subway lines'}
+          aria-pressed={showSubwayLines}
+          className={cn(
+            'picc-soft-transition grid h-10 w-10 place-items-center rounded-lg bg-white/90 shadow hover:bg-white active:scale-[0.94]',
+            showSubwayLines ? 'ring-2 ring-[#cd3814]' : '',
+          )}
+          onClick={onToggleSubwayLines}
+        >
+          <TrainFront className={cn('h-5 w-5', showSubwayLines ? 'text-[#cd3814]' : 'text-[#7f828a]')} />
         </button>
       </div>
     </>

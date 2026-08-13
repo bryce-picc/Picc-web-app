@@ -1,48 +1,62 @@
-# Session: Issue 157 Subway Toggle
+# Session: Issue 159 Subway Visibility
 
 ## Linked work
 
-- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/157
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/158
-- Branch: `codex/157-subway-toggle`
+- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/159
+- Branch: `codex/159-subway-visibility`
 
 ## Scope
 
-- Add a polished, accessible subway-lines toggle to the territory map toolbar.
-- Render the native Google Maps transit layer without disturbing PICC overlays.
-- Remember the setting on the current device.
-- Verify the interaction at desktop and mobile viewports.
+- Replace the faint native Google transit layer with a custom MTA subway overlay.
+- Match the supplied Apple Maps reference with thicker route-colored strokes, dark contrast casing, and readable route badges.
+- Move the subway toggle directly below the Filters control.
+- Preserve the device-local preference and all existing territory-map interactions.
 
 ## Out of scope
 
-- Custom MTA geometry, station, schedule, or service-alert ingestion.
-- Route optimization or Google Directions changes.
+- Replacing Google Maps as the base map.
+- Copying Apple map tiles, proprietary typography, POI data, or trade dress.
+- Live arrival times, service alerts, trip planning, or schedule ingestion.
 - Database, schema, authentication, authorization, environment, or production-data changes.
 - Any change to `/Users/brycejohnson/Code/map-app`.
 
 ## Constraints
 
 - Keep Google Maps as the only map provider.
-- Preserve existing account pins, route geometry, territory boundaries, markers, lasso, search, filters, and map gestures.
-- Use a failing behavior test before implementation.
-- Run `npm run verify` and browser tests before completion.
-- Capture user-visible desktop and mobile evidence.
+- Use public official MTA route geometry and document its source/version.
+- Keep subway labels legible without blocking dispensary pins or map gestures.
+- Use failing tests before behavior edits.
+- Run `npm run verify` and `npm run test:e2e` before completion.
+- Capture desktop and mobile browser evidence.
 
 ## Ownership and overlap
 
-Owned paths are documented in PR #158. Active PRs #144, #135, and #82 were reviewed. PRs #135 and #82 do not overlap. PR #144 is a broad legacy monorepo migration that conflicts with the current canonical architecture and declares no path ownership.
+- Planned owned paths: `components/mobile/territory-map-overlay-controls.tsx`, `components/territory/google-territory-map.tsx`, `lib/territory/subway-*`, `public/data/subway-*`, focused tests, this session file, and the issue-159 spec/plan.
+- Open PRs #144, #135, and #82 were checked. PRs #135 and #82 do not overlap. PR #144 is a stale broad monorepo migration that conflicts with the repository's current canonical architecture and declares no path ownership.
+
+## Validation plan
+
+- RED unit coverage for route styling, route grouping/offset behavior, zoom-based badge visibility, and invalid geometry.
+- RED Playwright coverage for Filters -> Subway control order, persistence, mobile reachability, and coexistence with route visualization.
+- Static checks, complete unit suite, production build, and complete E2E suite.
+- Browser screenshots at desktop and 390x844 mobile viewports.
 
 ## Validation evidence
 
-- RED unit proof: `lib/territory/subway-lines.test.ts` initially failed because the subway utility did not exist.
-- RED browser proof: the focused Playwright test initially failed because no `Show subway lines` control existed.
-- `npm run verify`: passed lint, typecheck, 27 Vitest files with 126 tests, Prisma validation, and the Next.js production build.
-- `npm run test:e2e`: 18 Playwright tests passed.
-- Focused subway suite: toggle on/off, `aria-pressed`, device-local reload persistence, route visualization coexistence, and 390x844 mobile reachability passed.
-- Independent review found and then verified the fix for blocked `localStorage` property access; no Critical or Important findings remain.
-- Desktop control-state screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff8d5-e100-7570-ad57-fb48755260e4/picc-subway-desktop.png`.
-- Mobile control-state screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff8d5-e100-7570-ad57-fb48755260e4/picc-subway-mobile.png`.
+- Official source: MTA NYCT Subway static GTFS feed `20260807-H-rockaways-extension-removed`, published by MTA New York City Transit.
+- Generated asset: 327,700 bytes, 28 services, 98 route paths, and 475 parent stations. The raw 43 MB GTFS archive is not committed.
+- RED unit proof: `lib/territory/subway-overlay.test.ts` failed because the overlay module did not exist; `lib/territory/subway-lines.test.ts` then failed because the custom loader/controller exports did not exist.
+- RED browser proof: the control-order test failed with Subway at y=169.75 above Filters ending at y=306.88.
+- Focused overlay tests: 13 passed.
+- Focused subway Playwright suite: 4 passed after moving Subway below Filters.
+- `npm run verify`: passed lint, typecheck, 28 Vitest files with 133 tests, Prisma validation, and the Next.js production build.
+- `npm run test:e2e`: 19 Playwright tests passed.
+- Real Google Maps visual verification used mocked territory responses and the existing local browser Maps configuration; no production record was created or changed.
+- Desktop screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff8d5-e100-7570-ad57-fb48755260e4/picc-subway-bold-desktop.png`.
+- Mobile screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff8d5-e100-7570-ad57-fb48755260e4/picc-subway-bold-mobile.png`.
 
-## Remaining verification boundary
+## Browser verdict
 
-The isolated local environment has no Google Maps API key, so screenshots prove the polished active control and responsive fit, while unit tests prove native `TransitLayer` attachment and cleanup. Actual subway geometry must be verified after deployment on the authenticated production map, where Google Maps configuration is present.
+The map shows thick official-colored routes with dark casing and readable service badges at both desktop and 390x844. The right toolbar order is Search, Territory Layers, Filters, Subway. Account-map gestures remain available, and unit/browser coverage proves toggle cleanup, persistence, and route-visualization coexistence.
+
+The only browser console errors during visual capture were expected local database requests before interception and the unavailable local audit endpoint; the Google Maps scripts and `/data/nyc-subway-overlay.v1.json` returned HTTP 200.

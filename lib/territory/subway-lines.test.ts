@@ -89,6 +89,13 @@ describe('subway overlay loader', () => {
   it('returns validated overlay data', async () => {
     await expect(loadSubwayOverlay(async () => ({ ok: true, json: async () => overlayData }))).resolves.toEqual(overlayData);
   });
+
+  it('reuses the validated asset for repeated loads with the same fetcher', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, json: async () => overlayData }));
+    await expect(Promise.all([loadSubwayOverlay(fetcher), loadSubwayOverlay(fetcher)])).resolves.toEqual([overlayData, overlayData]);
+    await expect(loadSubwayOverlay(fetcher)).resolves.toEqual(overlayData);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('custom subway overlay controller', () => {
@@ -133,6 +140,16 @@ describe('custom subway overlay controller', () => {
     expect(polylines[0].setOptions).toHaveBeenLastCalledWith({ strokeWeight: 12 });
     expect(polylines[1].setOptions).toHaveBeenLastCalledWith({ strokeWeight: 8 });
     expect(markers[0].setIcon).toHaveBeenCalled();
+
+    const casingUpdates = polylines[0].setOptions.mock.calls.length;
+    const colorUpdates = polylines[1].setOptions.mock.calls.length;
+    const iconUpdates = markers[0].setIcon.mock.calls.length;
+    const visibilityUpdates = markers[0].setMap.mock.calls.length;
+    controller!.updateZoom(14.4);
+    expect(polylines[0].setOptions).toHaveBeenCalledTimes(casingUpdates);
+    expect(polylines[1].setOptions).toHaveBeenCalledTimes(colorUpdates);
+    expect(markers[0].setIcon).toHaveBeenCalledTimes(iconUpdates);
+    expect(markers[0].setMap).toHaveBeenCalledTimes(visibilityUpdates);
 
     controller!.destroy();
     controller!.destroy();

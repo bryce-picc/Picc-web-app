@@ -37,6 +37,10 @@ type SubwayFetchResponse = {
   json: () => Promise<unknown>;
 };
 
+type SubwayFetcher = (input: string) => Promise<SubwayFetchResponse>;
+const defaultSubwayFetcher: SubwayFetcher = (input) => fetch(input);
+const subwayOverlayLoads = new WeakMap<SubwayFetcher, Promise<SubwayOverlayData | null>>();
+
 export type SubwayOverlayController = {
   updateZoom: (zoom: number) => void;
   destroy: () => void;
@@ -71,16 +75,24 @@ export function persistSubwayLinesPreference(
   }
 }
 
-export async function loadSubwayOverlay(
-  fetcher: (input: string) => Promise<SubwayFetchResponse> = (input) => fetch(input),
-): Promise<SubwayOverlayData | null> {
-  try {
-    const response = await fetcher(SUBWAY_OVERLAY_URL);
-    if (!response.ok) return null;
-    return parseSubwayOverlayData(await response.json());
-  } catch {
-    return null;
-  }
+export function loadSubwayOverlay(fetcher: SubwayFetcher = defaultSubwayFetcher): Promise<SubwayOverlayData | null> {
+  const cached = subwayOverlayLoads.get(fetcher);
+  if (cached) return cached;
+
+  const load = (async () => {
+    try {
+      const response = await fetcher(SUBWAY_OVERLAY_URL);
+      if (!response.ok) return null;
+      return parseSubwayOverlayData(await response.json());
+    } catch {
+      return null;
+    }
+  })();
+  subwayOverlayLoads.set(fetcher, load);
+  void load.then((result) => {
+    if (!result && subwayOverlayLoads.get(fetcher) === load) subwayOverlayLoads.delete(fetcher);
+  });
+  return load;
 }
 
 function markerIcon(api: Required<Pick<SubwayMapsApi, 'Size' | 'Point'>>, station: SubwayStation, size: number) {
@@ -132,33 +144,53 @@ export function createSubwayOverlayController(
     }
   }
 
-  const badges = data.stations.map((station) => ({
-    station,
-    marker: new api.Marker({
-      map: station.routes.length >= 5 ? map : null,
-      position: station.position,
-      icon: markerIcon(api, station, initialStyle.badgeSize),
-      title: `${station.name}: ${station.routes.join(', ')}`,
-      clickable: false,
-      optimized: true,
-      zIndex: 22,
-    }),
-  }));
+  const badges = data.stations.map((station) => {
+    const visible = station.routes.length >= 5;
+    return {
+      station,
+      visible,
+      marker: new api.Marker({
+        map: visible ? map : null,
+        position: station.position,
+        icon: markerIcon(api, station, initialStyle.badgeSize),
+        title: `${station.name}: ${station.routes.join(', ')}`,
+        clickable: false,
+        optimized: true,
+        zIndex: 22,
+      }),
+    };
+  });
 
   let destroyed = false;
+  let currentZoomBucket = subwayZoomBucket(9);
+  let currentStrokeWeight = initialStyle.strokeWeight;
+  let currentCasingWeight = initialStyle.casingWeight;
+  let currentBadgeSize = initialStyle.badgeSize;
   return {
     updateZoom(zoom) {
       if (destroyed) return;
+      const nextZoomBucket = subwayZoomBucket(zoom);
+      if (nextZoomBucket === currentZoomBucket) return;
+      currentZoomBucket = nextZoomBucket;
       const style = subwayStrokeStyle(zoom);
-      for (const line of lines) {
-        line.casing.setOptions({ strokeWeight: style.casingWeight });
-        line.color.setOptions({ strokeWeight: style.strokeWeight });
+      if (style.strokeWeight !== currentStrokeWeight || style.casingWeight !== currentCasingWeight) {
+        for (const line of lines) {
+          line.casing.setOptions({ strokeWeight: style.casingWeight });
+          line.color.setOptions({ strokeWeight: style.strokeWeight });
+        }
+        currentStrokeWeight = style.strokeWeight;
+        currentCasingWeight = style.casingWeight;
       }
       const visibleIds = new Set(visibleSubwayStations(data.stations, zoom).map((station) => station.id));
       for (const badge of badges) {
-        badge.marker.setIcon(markerIcon(api, badge.station, style.badgeSize));
-        badge.marker.setMap(visibleIds.has(badge.station.id) ? map : null);
+        if (style.badgeSize !== currentBadgeSize) badge.marker.setIcon(markerIcon(api, badge.station, style.badgeSize));
+        const nextVisible = visibleIds.has(badge.station.id);
+        if (nextVisible !== badge.visible) {
+          badge.visible = nextVisible;
+          badge.marker.setMap(nextVisible ? map : null);
+        }
       }
+      currentBadgeSize = style.badgeSize;
     },
     destroy() {
       if (destroyed) return;
@@ -170,4 +202,13 @@ export function createSubwayOverlayController(
       for (const badge of badges) badge.marker.setMap(null);
     },
   };
+}
+
+function subwayZoomBucket(zoom: number) {
+  if (zoom >= 14) return '14+';
+  if (zoom >= 13) return '13';
+  if (zoom >= 12) return '12';
+  if (zoom >= 11) return '11';
+  if (zoom >= 10) return '10';
+  return '9-';
 }

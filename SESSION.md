@@ -38,9 +38,10 @@
 ## Validation evidence
 
 - RED: at 1440x800, the primary navigation began at y=704 while `Save Boundary` ended at y=821.5.
-- GREEN: the focused Playwright suite passed all four checks covering internal scrolling, keyboard save, mobile portrait, mobile landscape, short desktop, and the reported 1800x1280 viewport.
+- GREEN: the focused Playwright suite passed all four checks covering real internal scroll movement with a stationary footer, tab-order keyboard save, mobile portrait, mobile landscape with at least a 44px usable form body, short desktop, and the reported 1800x1280 viewport.
 - `npm run verify`: passed lint, typecheck, 27 Vitest files with 126 tests, Prisma validation, and the Next.js production build.
 - `npm run test:e2e`: 22 Playwright tests passed.
+- Read-only review found the initial landscape test allowed a collapsed scroll body; the strengthened test failed at 0px, the height-aware inset was corrected, and the focused four-viewport suite passed again.
 - Desktop screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-desktop.png`.
 - Mobile screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-mobile.png`.
 

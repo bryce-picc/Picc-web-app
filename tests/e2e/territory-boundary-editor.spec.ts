@@ -118,7 +118,8 @@ test('keeps Save Boundary above the fixed primary navigation at a short viewport
     }),
   );
   const save = page.getByRole('button', { name: 'Save Boundary' });
-  await save.focus();
+  await page.getByRole('button', { name: 'Delete' }).last().focus();
+  await page.keyboard.press('Tab');
   await expect(save).toBeFocused();
   await save.press('Enter');
   await expect(page.getByText('Territory boundary updated')).toBeVisible();
@@ -133,6 +134,17 @@ for (const viewport of [
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await openPopulatedBoundaryEditor(page);
     await expectSaveAboveNavigation(page);
+    if (viewport.name === 'mobile landscape') {
+      const scrollBody = page.getByTestId('territory-boundary-editor-scroll');
+      const save = page.getByRole('button', { name: 'Save Boundary' });
+      const footerYBeforeScroll = (await save.boundingBox())!.y;
+      expect(await scrollBody.evaluate((element) => element.clientHeight)).toBeGreaterThanOrEqual(44);
+      await scrollBody.evaluate((element) => {
+        element.scrollTop = 100;
+      });
+      expect(await scrollBody.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+      expect((await save.boundingBox())!.y).toBe(footerYBeforeScroll);
+    }
     if (viewport.name === 'mobile portrait' || viewport.name === 'reported desktop') {
       await page.screenshot({ path: testInfo.outputPath(`${viewport.name.replaceAll(' ', '-')}.png`) });
     }

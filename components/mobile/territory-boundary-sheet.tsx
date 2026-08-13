@@ -285,7 +285,7 @@ export function TerritoryBoundaryEditor({
   const isNewBoundary = !boundary.id;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[max(var(--picc-bottom-nav-clearance),calc(var(--picc-bottom-nav-height)_+_12px))] top-[clamp(12px,12dvh,96px)] z-[5300] px-3 md:inset-x-auto md:right-4 md:w-[380px] md:max-w-[calc(100vw-32px)] md:px-0 lg:w-[420px]">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[max(var(--picc-bottom-nav-clearance),calc(var(--picc-bottom-nav-height)_+_12px))] top-[clamp(0px,calc(30dvh_-_117px),96px)] z-[5300] px-3 md:inset-x-auto md:right-4 md:w-[380px] md:max-w-[calc(100vw-32px)] md:px-0 lg:w-[420px]">
       <div className="pointer-events-auto mx-auto flex max-h-full max-w-[720px] flex-col rounded-2xl border border-[#d8b0a5] bg-[#fffaf8] shadow-[0_8px_28px_rgba(0,0,0,0.18)]">
         <div className="flex shrink-0 items-center justify-between border-b border-[#f0d6ce] px-4 py-3">
           <div>

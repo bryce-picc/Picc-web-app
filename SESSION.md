@@ -36,9 +36,10 @@ Owned paths are documented in PR #158. Active PRs #144, #135, and #82 were revie
 
 - RED unit proof: `lib/territory/subway-lines.test.ts` initially failed because the subway utility did not exist.
 - RED browser proof: the focused Playwright test initially failed because no `Show subway lines` control existed.
-- `npm run verify`: passed lint, typecheck, 27 Vitest files with 125 tests, Prisma validation, and the Next.js production build.
+- `npm run verify`: passed lint, typecheck, 27 Vitest files with 126 tests, Prisma validation, and the Next.js production build.
 - `npm run test:e2e`: 18 Playwright tests passed.
 - Focused subway suite: toggle on/off, `aria-pressed`, device-local reload persistence, route visualization coexistence, and 390x844 mobile reachability passed.
+- Independent review found and then verified the fix for blocked `localStorage` property access; no Critical or Important findings remain.
 - Desktop control-state screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff8d5-e100-7570-ad57-fb48755260e4/picc-subway-desktop.png`.
 - Mobile control-state screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff8d5-e100-7570-ad57-fb48755260e4/picc-subway-mobile.png`.
 

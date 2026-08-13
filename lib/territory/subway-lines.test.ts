@@ -3,11 +3,22 @@ import {
   SUBWAY_LINES_STORAGE_KEY,
   attachTransitLayer,
   createTransitLayer,
+  getBrowserLocalStorage,
   loadSubwayLinesPreference,
   persistSubwayLinesPreference,
 } from '@/lib/territory/subway-lines';
 
 describe('subway lines preference', () => {
+  it('returns null when the browser blocks access to the localStorage property', () => {
+    const browser = Object.defineProperty({}, 'localStorage', {
+      get() {
+        throw new DOMException('Blocked', 'SecurityError');
+      },
+    });
+
+    expect(getBrowserLocalStorage(browser)).toBeNull();
+  });
+
   it('defaults to off for missing, malformed, or inaccessible storage', () => {
     expect(loadSubwayLinesPreference(null)).toBe(false);
     expect(loadSubwayLinesPreference({ getItem: () => null })).toBe(false);

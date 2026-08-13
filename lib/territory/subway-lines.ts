@@ -2,6 +2,7 @@ export const SUBWAY_LINES_STORAGE_KEY = 'picc:territory:subway-lines';
 
 export type StorageReader = { getItem: (key: string) => string | null };
 export type StorageWriter = { setItem: (key: string, value: string) => void };
+export type BrowserStorage = StorageReader & StorageWriter;
 
 export type TransitLayerHandle = {
   setMap: (map: unknown | null) => void;
@@ -10,6 +11,14 @@ export type TransitLayerHandle = {
 export type TransitMapsApi = {
   TransitLayer?: new () => TransitLayerHandle;
 };
+
+export function getBrowserLocalStorage(browser: unknown): BrowserStorage | null {
+  try {
+    return (browser as { localStorage?: BrowserStorage } | null | undefined)?.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export function loadSubwayLinesPreference(storage: StorageReader | null | undefined): boolean {
   try {

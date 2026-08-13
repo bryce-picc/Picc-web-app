@@ -30,7 +30,7 @@ import type { TerritoryStorePin } from '@/lib/territory/types';
 import { getTerritoryMapSearchSuggestions } from '@/lib/territory/map-search-suggestions';
 import { clearSavedTerritoryFilters, countActiveTerritoryFilters, loadSavedTerritoryFilters, persistSavedTerritoryFilters, type TerritorySavedFiltersPayload } from '@/lib/territory/filter-storage';
 import { useRoutePlan } from '@/lib/territory/route-plan-client';
-import { loadSubwayLinesPreference, persistSubwayLinesPreference } from '@/lib/territory/subway-lines';
+import { getBrowserLocalStorage, loadSubwayLinesPreference, persistSubwayLinesPreference } from '@/lib/territory/subway-lines';
 
 const TerritoryMapMobile = dynamic(
   () => import('@/components/mobile/territory-map-mobile').then((module) => module.TerritoryMapMobile),
@@ -133,20 +133,20 @@ export function TerritoryMobile() {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
-    setShowSubwayLines(loadSubwayLinesPreference(window.localStorage));
+    setShowSubwayLines(loadSubwayLinesPreference(getBrowserLocalStorage(window)));
   }, []);
 
   const toggleSubwayLines = useCallback(() => {
     setShowSubwayLines((current) => {
       const next = !current;
-      persistSubwayLinesPreference(window.localStorage, next);
+      persistSubwayLinesPreference(getBrowserLocalStorage(window), next);
       return next;
     });
   }, []);
 
   const handleSubwayLinesUnavailable = useCallback(() => {
     setShowSubwayLines(false);
-    persistSubwayLinesPreference(window.localStorage, false);
+    persistSubwayLinesPreference(getBrowserLocalStorage(window), false);
     toast.error('Subway lines are unavailable in Google Maps right now.');
   }, []);
 

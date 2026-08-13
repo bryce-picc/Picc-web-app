@@ -3,7 +3,7 @@
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/161
-- Draft PR: pending initial branch publication
+- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/162
 - Branch: `codex/161-territory-save-clearance`
 
 ## Scope
@@ -35,14 +35,15 @@
 - PRs #135 and #82 do not overlap.
 - PR #144 is a stale broad monorepo migration that conflicts with the canonical architecture and declares no owned paths.
 
-## Validation plan
+## Validation evidence
 
-- RED: reproduce the footer/navigation intersection with a populated editor at the reported short viewport.
-- GREEN: verify the save footer stays above the primary navigation while the editor body scrolls.
-- Exercise the save control with mouse and keyboard.
-- Check mobile portrait, mobile landscape, short desktop, and standard desktop viewport fit.
-- Run `npm run verify` and the complete Playwright suite.
+- RED: at 1440x800, the primary navigation began at y=704 while `Save Boundary` ended at y=821.5.
+- GREEN: the focused Playwright suite passed all four checks covering internal scrolling, keyboard save, mobile portrait, mobile landscape, short desktop, and the reported 1800x1280 viewport.
+- `npm run verify`: passed lint, typecheck, 27 Vitest files with 126 tests, Prisma validation, and the Next.js production build.
+- `npm run test:e2e`: 22 Playwright tests passed.
+- Desktop screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-desktop.png`.
+- Mobile screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-mobile.png`.
 
 ## Remaining verification boundary
 
-Implementation and deployment evidence pending.
+The local UI uses intercepted read and save responses and does not mutate production data. Production proof remains pending merge and deployment.

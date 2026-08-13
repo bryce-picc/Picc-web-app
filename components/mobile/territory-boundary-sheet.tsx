@@ -285,9 +285,9 @@ export function TerritoryBoundaryEditor({
   const isNewBoundary = !boundary.id;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[96px] z-[5300] px-3 md:inset-x-auto md:right-4 md:top-[106px] md:w-[380px] md:max-w-[calc(100vw-32px)] md:px-0 lg:w-[420px]">
-      <div className="pointer-events-auto mx-auto flex max-h-[calc(100dvh-112px)] max-w-[720px] flex-col rounded-2xl border border-[#d8b0a5] bg-[#fffaf8] shadow-[0_8px_28px_rgba(0,0,0,0.18)] md:max-h-[calc(100dvh-126px)]">
-        <div className="flex items-center justify-between border-b border-[#f0d6ce] px-4 py-3">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[max(var(--picc-bottom-nav-clearance),calc(var(--picc-bottom-nav-height)_+_12px))] top-[clamp(12px,12dvh,96px)] z-[5300] px-3 md:inset-x-auto md:right-4 md:w-[380px] md:max-w-[calc(100vw-32px)] md:px-0 lg:w-[420px]">
+      <div className="pointer-events-auto mx-auto flex max-h-full max-w-[720px] flex-col rounded-2xl border border-[#d8b0a5] bg-[#fffaf8] shadow-[0_8px_28px_rgba(0,0,0,0.18)]">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#f0d6ce] px-4 py-3">
           <div>
             <p className="text-[16px] font-semibold text-[#23262d]">{isNewBoundary ? 'Draw Territory Boundary' : 'Edit Territory Boundary'}</p>
             <p className="mt-1 text-[12px] text-[#7a5e56]">
@@ -301,7 +301,7 @@ export function TerritoryBoundaryEditor({
           </button>
         </div>
 
-        <div className="overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto" data-testid="territory-boundary-editor-scroll">
           <div className="grid gap-3 px-4 py-4 md:grid-cols-1">
             <label className="block">
             <span className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#7b7e87]">Name</span>
@@ -406,7 +406,7 @@ export function TerritoryBoundaryEditor({
           </div>
         </div>
 
-        <div className="border-t border-[#f0d6ce] px-4 py-3">
+        <div className="shrink-0 border-t border-[#f0d6ce] px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[12px] text-[#7b7e87]">{boundary.coordinates.length} point{boundary.coordinates.length === 1 ? '' : 's'} captured</p>
             <button

@@ -219,6 +219,7 @@ model OrganizationWorkspace {
   crmContactProfiles        CrmContactProfile[]
   crmContactReminders       CrmContactReminder[]
   crmContactActivities      CrmContactActivity[]
+  gmailConnections          GmailConnection[]
   tags                      Tag[]
   pipelines                 Pipeline[]
   opportunities             Opportunity[]
@@ -506,20 +507,43 @@ model CrmContactReminder {
 }
 
 model CrmContactActivity {
-  id          String                @id @default(cuid())
-  orgId       String
-  org         OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  profileId   String
-  profile     CrmContactProfile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  kind        String
-  channel     Channel?
-  summary     String
-  occurredAt  DateTime
-  externalUrl String?
-  createdAt   DateTime              @default(now())
+  id                String                @id @default(cuid())
+  orgId             String
+  org               OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  profileId         String
+  profile           CrmContactProfile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind              String
+  channel           Channel?
+  summary           String
+  occurredAt        DateTime
+  externalUrl       String?
+  actorClerkUserId  String?
+  providerMessageId String?
+  createdAt         DateTime              @default(now())
 
+  @@unique([orgId, actorClerkUserId, providerMessageId])
   @@index([orgId, occurredAt])
   @@index([profileId, occurredAt])
+}
+
+model GmailConnection {
+  id                    String                @id @default(cuid())
+  orgId                 String
+  org                   OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  clerkUserId           String
+  mailboxEmail          String
+  encryptedAccessToken  String?
+  encryptedRefreshToken String?
+  accessTokenExpiresAt  DateTime?
+  grantedScope          String
+  status                IntegrationSyncStatus @default(IDLE)
+  lastSyncedAt          DateTime?
+  lastError             String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  @@unique([orgId, clerkUserId])
+  @@index([orgId, mailboxEmail])
 }
 
 model Tag {

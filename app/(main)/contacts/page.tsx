@@ -1,6 +1,7 @@
 import { AccountsSectionTabs } from '@/components/crm/accounts-section-tabs';
 import { ContactCreateFlow } from '@/components/crm/contact-create-flow';
 import { ContactsTable } from '@/components/crm/contacts-table';
+import { GmailSuggestedContacts } from '@/components/crm/gmail-suggested-contacts';
 import { DataFreshnessBanner } from '@/components/shared/data-freshness';
 import { requireWorkspaceContext } from '@/lib/auth/workspace';
 import { prisma } from '@/lib/db/prisma';
@@ -31,6 +32,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
           <DataFreshnessBanner freshness={runtime.freshness.contacts} compact />
           <DataFreshnessBanner freshness={runtime.freshness.accounts} compact />
         </section>
+        {!showArchived ? <GmailSuggestedContacts /> : null}
         <ContactsTable rows={visibleContacts} accounts={runtime.accounts.map((account) => ({ id: account.notionPageId, name: account.name }))} />
       </div>
     </div>

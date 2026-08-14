@@ -41,8 +41,10 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
   const searchParams = useSearchParams();
   const requestedOpen = searchParams.get('new') === '1';
   const requestedAccount = searchParams.get('account') ?? '';
+  const requestedName = searchParams.get('name') ?? '';
+  const requestedEmail = searchParams.get('email') ?? '';
   const [open, setOpen] = useState(requestedOpen);
-  const [draft, setDraft] = useState({ ...emptyDraft, accountPageId: requestedAccount });
+  const [draft, setDraft] = useState({ ...emptyDraft, accountPageId: requestedAccount, name: requestedName, email: requestedEmail });
   const [availableAccounts, setAvailableAccounts] = useState(accounts);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [accountsRequested, setAccountsRequested] = useState(false);
@@ -53,8 +55,11 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
   const [roleCollisions, setRoleCollisions] = useState<RoleCollision[]>([]);
 
   useEffect(() => {
-    if (requestedOpen) setOpen(true);
-  }, [requestedOpen]);
+    if (requestedOpen) {
+      setOpen(true);
+      setDraft((current) => ({ ...current, accountPageId: requestedAccount || current.accountPageId, name: requestedName || current.name, email: requestedEmail || current.email }));
+    }
+  }, [requestedAccount, requestedEmail, requestedName, requestedOpen]);
 
   async function loadAccountsIfNeeded() {
     if (availableAccounts.length > 0 || loadingAccounts || accountsRequested) return;

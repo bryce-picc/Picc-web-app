@@ -38,7 +38,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ con
       where: { orgId_notionContactPageId: { orgId: ctx.orgId, notionContactPageId } },
       include: {
         reminders: { orderBy: { dueAt: 'asc' } },
-        activities: { orderBy: { occurredAt: 'desc' }, take: 100 },
+        activities: { where: { providerMessageId: null }, orderBy: { occurredAt: 'desc' }, take: 100 },
       },
     });
     return NextResponse.json({

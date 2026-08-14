@@ -1,48 +1,45 @@
-# Session: Issue 163 Mobile CRM Record Management
+# Session: Issue 163 Gmail Contact Activity
 
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
-- Branch: `codex/163-contact-profiles`
-- Base branch: `main` after the approved foundation release merged.
-- PR: https://github.com/brycejohnson1417/Picc-web-app/pull/168
+- Branch: `codex/163-gmail-contact-activity`
+- Base branch: `main` after the approved contact-profile release merged.
+- PR: https://github.com/brycejohnson1417/Picc-web-app/pull/169
 
 ## Scope
 
-- Improve mobile CRM record-management usability through existing app boundaries.
-- Add safe, explicit controls for supported record metadata and maintenance workflows.
-- Add focused deterministic and mobile-browser coverage.
+- Add per-rep read-only Gmail OAuth connection and explicit disconnect controls in Settings.
+- Match Gmail activity and suggested contacts to CRM contacts through explicit provider boundaries.
+- Show email activity and Gmail thread links on contact profiles.
+- Offer reviewable suggested contacts with prefilled quick add.
 
 ## Out of scope
 
-- New provider integrations, device-history ingestion, and scheduled reporting.
-- Production-data changes during verification.
+- Device call/text history ingestion.
+- Daily scheduled briefing and follow-up intelligence, which remain in the next release.
+- Production mailbox or CRM mutations during verification.
 - Changes to `/Users/brycejohnson/Code/map-app`.
 
 ## Constraints
 
-- Preserve the current PWA shell, tenant scope, permissions, and explicit external-service boundaries.
-- Use RED-first tests for behavior changes.
-- Run `npm run verify` and `npm run test:e2e`.
-- Capture mobile browser proof for changed UI flows.
+- Preserve tenant/user scoping, least-privilege Gmail scopes, encrypted refresh tokens, and explicit disconnect behavior.
+- Keep CRM creation behind the existing guarded contact workflow and overwrite warnings.
+- Use RED-first deterministic tests and real mobile browser verification.
 
 ## Ownership and overlap
 
-- Owned paths: focused mobile CRM UI and domain/server boundaries, tests, `SESSION.md`, and UI evidence.
-- Stacked on merged PR #167 for the shared action foundation.
-- Latest `main` changes, including the territory drawing clearance fix, are integrated without modifying their behavior.
+- Owned paths: focused mailbox adapter/routes/UI, contact timeline integration, tests, one scoped migration, and `SESSION.md`.
+- Rebased onto merged PR #168 and current `main`; the hardened contact lifecycle behavior remains authoritative.
+- No production secrets or data are changed during local verification.
 
 ## Validation evidence
 
-- `npm run verify` passed after integrating current `main` and all review passes: lint, typecheck, 39 Vitest files / 184 tests, Prisma validation, and production build.
-- Full browser suite passed on an isolated port: `PICC_AGENT_DEV_PORT=3180 npx playwright test --workers=1` (29 tests).
-- Final focused contact browser suite passed on port 3182 (3 tests) after archive authorization, merge-target restoration, immediate timeline, and loading-state changes.
-- Focused API/domain suite passed: 8 files / 38 tests.
-- Mobile browser proof covered favorite/profile editing, reminders through visible completion, save-to-phone vCard download, role-collision confirmation, and guarded maintenance dialogs.
-- Review regressions cover full Notion relation pagination, role-preserving merges and retries, stale collision invalidation, API-aligned role controls, load-safe partial profile updates, metadata consolidation, and recoverable cross-system merge retries.
-- UI evidence: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/contact-profile-mobile.png`.
+- Pre-rebase validation passed: lint, typecheck, 38 Vitest files / 167 tests, Prisma validation, production build, and 28 Chromium tests.
+- Focused mobile browser flows passed for suggested-contact review and prefilled quick add, connected/disconnected Settings states, explicit disconnect confirmation, and contact email-thread links.
+- Current-main verification will be rerun before merge.
 
-## Remaining verification boundary
+## Remaining deployment boundary
 
-- Production UI proof follows merge and deployment.
-- Schema migration and user-triggered live CRM maintenance were approved before merge.
+- The scoped migration and production OAuth secrets/redirect configuration were approved for release.
+- Production OAuth consent and thread readback require configured Google OAuth values and a rep completing the browser consent flow.

@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle2, Clock3, Copy, Mail, MapPinned, MessageSquare, Navigation, PencilLine, Phone, PhoneCall, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronDown, Clock3, Copy, MapPinned, Navigation, PencilLine, PhoneCall, X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAppAccess } from '@/components/auth/app-access-provider';
+import { ContactCreateFlow } from '@/components/crm/contact-create-flow';
+import { ContactQuickActions } from '@/components/crm/contact-quick-actions';
 import { MockOrderProposalPanel } from '@/components/crm/mock-order-proposal-panel';
 import { PreferredPartnerProposalPanel } from '@/components/crm/preferred-partner-proposal-panel';
 import { PreferredPartnerSavingsPanel } from '@/components/crm/preferred-partner-savings-panel';
@@ -167,7 +169,6 @@ export function AccountDetailSheet({ store, onClose, onAddToRoute, routeSelected
   const [checkInFollowUpNeededDraft, setCheckInFollowUpNeededDraft] = useState<boolean | null>(null);
   const [checkInFollowUpReasonDraft, setCheckInFollowUpReasonDraft] = useState('');
   const [checkInContact, setCheckInContact] = useState<TerritoryStoreContact | null>(null);
-  const [contactActionTarget, setContactActionTarget] = useState<TerritoryStoreContact | null>(null);
   const [streetViewLoadError, setStreetViewLoadError] = useState(false);
 
   useEffect(() => {
@@ -179,7 +180,6 @@ export function AccountDetailSheet({ store, onClose, onAddToRoute, routeSelected
       setCheckInFollowUpNeededDraft(null);
       setCheckInFollowUpReasonDraft('');
       setCheckInContact(null);
-      setContactActionTarget(null);
       setStreetViewLoadError(false);
       return;
     }
@@ -191,7 +191,6 @@ export function AccountDetailSheet({ store, onClose, onAddToRoute, routeSelected
     setCheckInFollowUpNeededDraft(null);
     setCheckInFollowUpReasonDraft('');
     setCheckInContact(null);
-    setContactActionTarget(null);
     setStreetViewLoadError(false);
 
     const cachedDetail = readCachedStoreDetail(store.id);
@@ -362,52 +361,6 @@ export function AccountDetailSheet({ store, onClose, onAddToRoute, routeSelected
 
   function callStore() {
     launchDial(activeStore.phoneNumber, activeStore.name);
-  }
-
-  function callFromContactCard(contact: TerritoryStoreContact) {
-    launchDial(cleanContactField(contact.phone), contact.name);
-  }
-
-  function hasContactEmail(contact: TerritoryStoreContact) {
-    return Boolean(cleanContactField(contact.email));
-  }
-
-  function hasContactPhone(contact: TerritoryStoreContact) {
-    return Boolean(cleanContactField(contact.phone));
-  }
-
-  function openContactActions(contact: TerritoryStoreContact) {
-    if (!hasContactEmail(contact) && !hasContactPhone(contact)) {
-      toast.message(`No contact method is available for ${contact.name}.`);
-      return;
-    }
-    setContactActionTarget(contact);
-  }
-
-  function contactViaEmail(contact: TerritoryStoreContact) {
-    const email = cleanContactField(contact.email);
-    if (!email) {
-      toast.error(`No email available for ${contact.name}.`);
-      return;
-    }
-    const subject = encodeURIComponent(`PICC follow-up: ${activeStore.name}`);
-    window.location.href = `mailto:${email}?subject=${subject}`;
-    setContactActionTarget(null);
-  }
-
-  function contactViaText(contact: TerritoryStoreContact) {
-    const phone = toDialablePhone(contact.phone);
-    if (!phone) {
-      toast.error(`No phone available for ${contact.name}.`);
-      return;
-    }
-    window.location.href = `sms:${phone}`;
-    setContactActionTarget(null);
-  }
-
-  function contactViaCall(contact: TerritoryStoreContact) {
-    callFromContactCard(contact);
-    setContactActionTarget(null);
   }
 
   function openCheckInModal(contact: TerritoryStoreContact | null = null) {
@@ -636,22 +589,34 @@ export function AccountDetailSheet({ store, onClose, onAddToRoute, routeSelected
               </DetailSection>
 
               <div className="border-b border-[#c6c7cb] px-5 py-4">
-                <p className="text-[14px] uppercase tracking-wide text-[#8c9098]">Associated Contacts</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[14px] uppercase tracking-wide text-[#8c9098]">Associated Contacts</p>
+                  {appAccess.canEdit ? (
+                    <ContactCreateFlow
+                      accounts={[{
+                        notionPageId: activeStore.notionPageId,
+                        name: activeStore.name,
+                        city: activeStore.city ?? null,
+                        state: activeStore.state ?? null,
+                      }]}
+                    />
+                  ) : null}
+                </div>
                 {contacts.length === 0 ? <p className="mt-1 text-[16px] text-[#1d1f23]">No contacts linked.</p> : null}
                 {contacts.map((contact) => (
-                  <div key={contact.id} className="mt-2 rounded-lg border border-[#c7c8cd] bg-[#f3f3f6] px-3 py-2">
+                  <div key={contact.id} className="mt-2 rounded-lg border border-[#d5dae3] bg-white px-3 py-3">
                     <div className="flex items-start justify-between gap-3">
-                      <Link href={`/contacts/${encodeURIComponent(contact.id)}`} className="text-[16px] font-semibold text-[#1f4e9f] underline-offset-2 hover:underline">
-                        {contact.name}
-                      </Link>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          className="rounded-md border border-[#b4b7bf] px-2.5 py-1 text-[13px] font-medium text-[#27303f] hover:bg-[#e8eaf0]"
-                          onClick={() => openContactActions(contact)}
-                        >
-                          Contact
-                        </button>
+                      <div className="min-w-0">
+                        <Link href={`/contacts/${encodeURIComponent(contact.id)}`} className="text-[16px] font-semibold text-[#1f4e9f] underline-offset-2 hover:underline">
+                          {contact.name}
+                        </Link>
+                        <p className="text-[13px] text-[#697281]">{contact.roleTitle || 'Role not set'}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <ContactQuickActions
+                          contact={contact}
+                          accounts={[{ id: activeStore.notionPageId, name: activeStore.name }]}
+                        />
                         {appAccess.canEdit ? (
                           <button
                             type="button"
@@ -664,10 +629,10 @@ export function AccountDetailSheet({ store, onClose, onAddToRoute, routeSelected
                         ) : null}
                       </div>
                     </div>
-                    <p className="text-[14px] text-[#5e6169]">{contact.roleTitle || '—'}</p>
-                    <p className="text-[14px] text-[#5e6169]">
-                      {contact.email || '—'} · {contact.phone || '—'}
-                    </p>
+                    <div className="mt-2 grid gap-1 text-[14px] text-[#5e6169] sm:grid-cols-2">
+                      <p className="break-all">{contact.email || 'No email'}</p>
+                      <p>{contact.phone || 'No phone'}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -832,60 +797,6 @@ export function AccountDetailSheet({ store, onClose, onAddToRoute, routeSelected
             </>
           ) : null}
         </div>
-
-        {contactActionTarget ? (
-          <div className="fixed inset-0 z-[5210] bg-black/40" onClick={() => setContactActionTarget(null)}>
-            <div className="absolute inset-x-0 bottom-[var(--picc-bottom-nav-clearance)] mx-auto max-h-[calc(100dvh-var(--picc-bottom-nav-clearance)-24px)] max-w-[720px] overflow-y-auto rounded-t-2xl bg-[#f8f8fb] px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-4" onClick={(event) => event.stopPropagation()}>
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-[20px] font-semibold text-[#1d1f23]">Contact {contactActionTarget.name}</h3>
-                  <p className="text-[14px] text-[#5f6269]">{activeStore.name}</p>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-md p-1 text-[#5f6269] hover:bg-[#ececf1]"
-                  onClick={() => setContactActionTarget(null)}
-                  aria-label="Close contact modal"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="grid gap-2">
-                {hasContactEmail(contactActionTarget) ? (
-                  <button
-                    type="button"
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#c3c5cc] bg-white px-3 text-[15px] font-medium text-[#2b2f38]"
-                    onClick={() => contactViaEmail(contactActionTarget)}
-                  >
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </button>
-                ) : null}
-                {hasContactPhone(contactActionTarget) ? (
-                  <button
-                    type="button"
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#c3c5cc] bg-white px-3 text-[15px] font-medium text-[#2b2f38]"
-                    onClick={() => contactViaText(contactActionTarget)}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Text
-                  </button>
-                ) : null}
-                {hasContactPhone(contactActionTarget) ? (
-                  <button
-                    type="button"
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#c3c5cc] bg-white px-3 text-[15px] font-medium text-[#2b2f38]"
-                    onClick={() => contactViaCall(contactActionTarget)}
-                  >
-                    <Phone className="h-4 w-4" />
-                    Call
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        ) : null}
 
         {checkInModalOpen && appAccess.canEdit ? (
           <div className="fixed inset-0 z-[5200] bg-black/40" onClick={() => !checkingIn && setCheckInModalOpen(false)}>
@@ -1066,23 +977,19 @@ function AccountDetailConfidence({
   const Icon = tone.Icon;
 
   return (
-    <div className={cn('mt-4 rounded-2xl border px-3 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)]', tone.className)}>
-      <div className="flex items-start gap-2">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] font-semibold">{tone.label}</span>
-            <span className="rounded-full border border-current/15 bg-white/55 px-2 py-0.5 text-[11px] font-semibold">
-              {contactLabel}
-            </span>
-          </div>
-          <p className="mt-1 text-[12px] leading-5 opacity-85">
-            Source: {source}. Last sync: {syncedAt}. Last edit: {editedAt}.
-          </p>
-          {accountFreshness?.error ? <p className="mt-1 text-[12px] font-medium opacity-90">{accountFreshness.error}</p> : null}
-        </div>
+    <details className={cn('group mt-4 rounded-xl border shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)]', tone.className)}>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#276fd3] focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-[12px] font-semibold">Last sync: {syncedAt}</span>
+        <span className="hidden rounded-full border border-current/15 bg-white/55 px-2 py-0.5 text-[11px] font-semibold sm:inline">{tone.label}</span>
+        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+      <div className="border-t border-current/15 px-3 py-2 text-[12px] leading-5 opacity-85">
+        <p>{contactLabel}</p>
+        <p>Source: {source}. Last edit: {editedAt}.</p>
+        {accountFreshness?.error ? <p className="mt-1 font-medium opacity-90">{accountFreshness.error}</p> : null}
       </div>
-    </div>
+    </details>
   );
 }
 

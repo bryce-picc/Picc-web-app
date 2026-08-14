@@ -1,11 +1,13 @@
 'use client';
 
-import { AlertTriangle, Filter, Loader2, MapPin, RefreshCw, SlidersHorizontal, X } from 'lucide-react';
+import { AlertTriangle, Filter, Loader2, RefreshCw, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { AccountDetailSheet } from '@/components/mobile/account-detail-sheet';
+import { AccountFollowUpFlow } from '@/components/crm/account-follow-up-flow';
+import { ContactCreateFlow } from '@/components/crm/contact-create-flow';
 import { AlphabetRail } from '@/components/mobile/alphabet-rail';
 import { MobileHeader } from '@/components/mobile/mobile-header';
 import { MobileSearch } from '@/components/mobile/mobile-search';
@@ -68,6 +70,10 @@ export function AccountsMobile() {
   });
 
   const allStores = useMemo(() => storesQuery.data?.stores ?? [], [storesQuery.data?.stores]);
+  const contactAccounts = useMemo(
+    () => allStores.map((store) => ({ notionPageId: store.notionPageId, name: store.name, city: store.city ?? null, state: store.state ?? null })),
+    [allStores],
+  );
   const accountFreshness = useMemo(
     () => (storesQuery.data ? buildTerritoryFreshness(storesQuery.data.meta) : null),
     [storesQuery.data],
@@ -203,6 +209,10 @@ export function AccountsMobile() {
       </MobileHeader>
 
       <div className="mx-auto max-w-[var(--app-shell-max)] px-4 pb-28 pt-4 md:px-5 lg:px-6">
+        <div className="mb-3 flex items-center justify-end gap-2">
+          <AccountFollowUpFlow accounts={allStores.map((store) => ({ id: store.id, notionPageId: store.notionPageId, name: store.name, repNames: store.repNames }))} />
+          <ContactCreateFlow accounts={contactAccounts} />
+        </div>
         <div className="sticky top-0 z-20 -mx-4 border-b border-[#dce2eb] bg-[#f7f9fc]/95 px-4 pb-3 pt-2 backdrop-blur md:-mx-5 md:px-5 lg:-mx-6 lg:px-6">
           <div className="grid grid-cols-[minmax(0,1fr)_48px] gap-2">
             <MobileSearch value={search} onChange={setSearch} placeholder="Search Accounts" />
@@ -307,8 +317,9 @@ export function AccountsMobile() {
             </div>
           ) : null}
 
-          <div className="space-y-4">
-            {grouped.map(([letter, list]) => (
+          <div className="grid grid-cols-[minmax(0,1fr)_28px] items-start gap-2">
+            <div className="space-y-4">
+              {grouped.map(([letter, list]) => (
               <section
                 key={letter}
                 ref={(element) => {
@@ -322,38 +333,52 @@ export function AccountsMobile() {
                       key={store.id}
                       type="button"
                       onClick={() => setDetailStoreId(store.id)}
-                      className="w-full rounded-xl border border-[#e0e4eb] bg-white px-4 py-3 text-left shadow-[0_8px_24px_rgba(24,33,45,0.05)] transition hover:border-[#9db8f7] hover:bg-[#f5f9ff] active:scale-[0.995]"
+                      className="w-full rounded-xl border border-[#dce2eb] bg-white px-3.5 py-3 text-left shadow-[0_4px_16px_rgba(24,33,45,0.04)] transition hover:border-[#9db8f7] hover:bg-[#f5f9ff] active:scale-[0.995]"
                     >
-                      <p className="truncate text-[20px] font-semibold text-[#15171c]">{store.name}</p>
-                      <p className="mt-1 flex min-w-0 items-center gap-1 truncate text-[14px] text-[#6b7280]">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{store.locationAddress ?? store.locationLabel ?? 'No address'}</span>
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-[#eef3fb] px-2.5 py-1 text-[12px] font-semibold text-[#304153]">
-                          Rep: {store.repNames.length > 0 ? store.repNames.join(', ') : 'Unassigned'}
-                        </span>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="min-w-0 truncate text-[18px] font-semibold leading-6 text-[#15171c]">{store.name}</p>
                         <NotionOptionChip
                           label={store.status || 'Status unknown'}
                           colorName={store.statusColorName}
                           fallbackHex={store.statusColor || '#5f6b7a'}
                         />
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-[#eef3fb] px-2.5 py-1 text-[12px] font-semibold text-[#304153]">
+                          Rep: {store.repNames.length > 0 ? store.repNames.join(', ') : 'Unassigned'}
+                        </span>
                         {store.isPreferredPartner ? (
-                          <span className="rounded-full border border-black bg-black px-3 py-1 text-[12px] font-semibold text-white">
+                          <span className="rounded-full border border-[#202733] bg-[#202733] px-2.5 py-1 text-[12px] font-semibold text-white">
                             Preferred
                           </span>
                         ) : null}
                       </div>
+                      <dl className="mt-3 grid grid-cols-3 divide-x divide-[#e4e8ee] border-t border-[#e4e8ee] pt-2 text-[11px]">
+                        <div className="pr-2">
+                          <dt className="text-[#7a8492]">Overdue</dt>
+                          <dd className={store.daysOverdue && store.daysOverdue > 0 ? 'mt-0.5 font-semibold text-[#b43118]' : 'mt-0.5 font-semibold text-[#344052]'}>
+                            {typeof store.daysOverdue === 'number' ? (store.daysOverdue > 0 ? `${store.daysOverdue} days` : store.daysOverdue === 0 ? 'Due today' : 'Current') : 'Unavailable'}
+                          </dd>
+                        </div>
+                        <div className="px-2">
+                          <dt className="text-[#7a8492]">Pay days avg.</dt>
+                          <dd className="mt-0.5 font-semibold text-[#667183]">Unavailable</dd>
+                        </div>
+                        <div className="pl-2">
+                          <dt className="text-[#7a8492]">Nabis rank</dt>
+                          <dd className="mt-0.5 font-semibold text-[#667183]">Unavailable</dd>
+                        </div>
+                      </dl>
                     </button>
                   ))}
                 </div>
               </section>
-            ))}
+              ))}
+            </div>
+            {grouped.length > 0 ? <AlphabetRail layout="gutter" onSelect={(letter) => sectionRefs.current[letter]?.scrollIntoView({ behavior: 'smooth', block: 'start' })} /> : null}
           </div>
         </div>
       </div>
-
-      {grouped.length > 0 ? <AlphabetRail onSelect={(letter) => sectionRefs.current[letter]?.scrollIntoView({ behavior: 'smooth', block: 'start' })} /> : null}
 
       {showFilters ? (
         <AccountFiltersSheet

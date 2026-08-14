@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { currentUser } from '@clerk/nextjs/server';
 import { Role } from '@prisma/client';
+import { ChevronDown } from 'lucide-react';
 import { FollowUpActionBoard, type HomeFollowUpItem } from '@/components/home/follow-up-action-board';
 import { HotLeadsBoard, type HomeHotLeadItem } from '@/components/home/hot-leads-board';
 import { PreferredPartnerRepChart } from '@/components/home/preferred-partner-rep-chart';
@@ -304,17 +305,24 @@ export default async function HomePage() {
         }
       />
 
-      <WorkspaceSection eyebrow="Freshness" title="What is synced right now" description="The screen should feel current without forcing a full refresh every time you navigate back.">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <details className="group overflow-hidden rounded-xl border border-[#dbe1e9] bg-[#f8fafc]">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-2 text-sm text-[#344052] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#276fd3] focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
+          <span className="font-semibold">Last sync: {freshnessTiles[1]?.value ?? 'Not synced yet'}</span>
+          <span className="ml-auto text-xs text-[#7a8492]">{freshnessTiles.length} sources</span>
+          <ChevronDown className="h-4 w-4 transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="grid grid-cols-1 gap-2 border-t border-[#dbe1e9] p-3 md:grid-cols-2 xl:grid-cols-3">
           {freshnessTiles.map((tile) => (
-            <div key={tile.title} className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
-              <p className="text-sm font-medium text-[#18212d]">{tile.title}</p>
-              <p className="mt-1 text-lg font-semibold text-[#18212d]">{tile.value}</p>
-              <p className="mt-1 text-sm text-[#5c6674]">{tile.description}</p>
+            <div key={tile.title} className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-2.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-sm font-medium text-[#18212d]">{tile.title}</p>
+                <p className="text-sm font-semibold text-[#18212d]">{tile.value}</p>
+              </div>
+              <p className="mt-1 text-xs text-[#5c6674]">{tile.description}</p>
             </div>
           ))}
         </div>
-      </WorkspaceSection>
+      </details>
 
       {preferredPartnerSummary ? (
         <WorkspaceSection

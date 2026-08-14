@@ -28,7 +28,7 @@ const emptyDraft = {
   phone: '',
 };
 
-export function ContactCreateFlow({ accounts }: { accounts: ContactAccountOption[] }) {
+export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { accounts: ContactAccountOption[]; triggerVariant?: 'default' | 'icon' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedOpen = searchParams.get('new') === '1';
@@ -144,10 +144,17 @@ export function ContactCreateFlow({ accounts }: { accounts: ContactAccountOption
         <button
           type="button"
           onClick={() => void loadAccountsIfNeeded()}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#c93412] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(201,52,18,0.22)] transition hover:bg-[#ad2d0e] active:scale-[0.98]"
+          aria-label={triggerVariant === 'icon' ? 'Add contact' : undefined}
+          title={triggerVariant === 'icon' ? 'Add contact' : undefined}
+          className={cn(
+            'inline-flex items-center justify-center bg-[#c93412] font-semibold text-white transition hover:bg-[#ad2d0e] active:scale-[0.98]',
+            triggerVariant === 'icon'
+              ? 'h-10 w-10 rounded-lg shadow'
+              : 'min-h-11 gap-2 whitespace-nowrap rounded-xl px-4 text-sm shadow-[0_8px_18px_rgba(201,52,18,0.22)]',
+          )}
         >
           <Plus className="h-4 w-4" />
-          Add contact
+          {triggerVariant === 'default' ? 'Add contact' : null}
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>

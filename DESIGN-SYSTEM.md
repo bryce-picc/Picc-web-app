@@ -46,3 +46,4 @@ This app is a field operating system for sales, ops, and vendor-day execution. S
 - Empty: explain the active filter/query and provide the next useful action.
 - Error: show the failed system, human-readable reason, and retry if available.
 - Freshness: show source, last sync, stale/syncing state, and retry/detail where useful.
+- Freshness controls are collapsed by default on every operational screen. The closed state shows only a compact `Last sync` timestamp plus essential state; source, record counts, errors, and manual actions belong in the disclosure details.

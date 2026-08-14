@@ -9,6 +9,7 @@ import {
   AlertCircle,
   BarChart3,
   Calendar,
+  ChevronDown,
   DollarSign,
   Download,
   Loader2,
@@ -369,14 +370,17 @@ export function NabisSalesDashboard() {
                 </div>
                 <div>
                   <h1 className="text-xl font-semibold text-[#18212d]">Nabis Sales Dashboard</h1>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[#5f6773]">
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700">
-                      <Wifi className="mr-1.5 h-3.5 w-3.5" />
-                      Local synced Nabis data
-                    </span>
-                    {metadata ? <span>Last synced {formatTimestamp(metadata.fetchedAt)}</span> : null}
-                    {metadata?.lastRetailerSyncAt ? <span>Retailers {formatTimestamp(metadata.lastRetailerSyncAt)}</span> : null}
-                  </div>
+                  <details className="group mt-1 text-sm text-[#5f6773]">
+                    <summary className="inline-flex min-h-8 cursor-pointer list-none items-center gap-2 rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#276fd3] [&::-webkit-details-marker]:hidden">
+                      <Wifi className="h-3.5 w-3.5 text-emerald-700" />
+                      <span>{metadata ? `Last sync: ${formatTimestamp(metadata.fetchedAt)}` : 'Last sync: Not recorded'}</span>
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-open:rotate-180" />
+                    </summary>
+                    <div className="mt-1 flex flex-wrap gap-2 pl-1 text-xs">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700">Local synced Nabis data</span>
+                      {metadata?.lastRetailerSyncAt ? <span className="px-1 py-1">Retailers {formatTimestamp(metadata.lastRetailerSyncAt)}</span> : null}
+                    </div>
+                  </details>
                 </div>
               </div>
             </div>

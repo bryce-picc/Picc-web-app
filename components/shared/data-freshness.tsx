@@ -1,44 +1,9 @@
-import { AlertCircle, CheckCircle2, Clock3, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronDown, Clock3, Loader2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui';
 import type { RuntimeFreshness } from '@/lib/runtime/account-contact-contract';
+import { buildFreshnessDisclosure } from '@/lib/ui/data-freshness-presentation';
 import { cn } from '@/lib/utils';
-
-function formatRelativeAge(ageSeconds: number | null) {
-  if (ageSeconds === null) {
-    return 'unknown';
-  }
-
-  if (ageSeconds < 60) {
-    return 'just now';
-  }
-
-  const minutes = Math.floor(ageSeconds / 60);
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 48) {
-    return `${hours}h ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
-function formatTimestamp(value: string | null) {
-  if (!value) {
-    return 'No sync recorded';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return 'Invalid sync time';
-  }
-
-  return date.toLocaleString();
-}
 
 function stateTone(state: RuntimeFreshness['state']) {
   if (state === 'fresh') {
@@ -99,32 +64,43 @@ export function DataFreshnessBanner({
 }) {
   const tone = stateTone(freshness.state);
   const Icon = tone.icon;
+  const disclosure = buildFreshnessDisclosure(freshness);
 
   return (
-    <div
+    <details
       className={cn(
-        'flex flex-col gap-3 rounded-xl border px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between',
+        'group rounded-lg border text-sm shadow-[0_1px_2px_rgba(24,33,45,0.04)]',
         tone.className,
-        compact ? 'py-2' : null,
+        compact ? null : 'sm:max-w-2xl',
         className,
       )}
     >
-      <div className="flex min-w-0 items-start gap-3">
-        <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', freshness.state === 'syncing' ? 'animate-spin' : null)} />
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold">{freshness.label}</span>
-            <DataFreshnessBadge freshness={freshness} />
-            <span className="text-xs opacity-75">{formatRelativeAge(freshness.ageSeconds)}</span>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#276fd3] focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
+        <Icon className={cn('h-4 w-4 shrink-0', freshness.state === 'syncing' ? 'animate-spin' : null)} />
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold sm:text-sm">{disclosure.lastSyncLabel}</span>
+        <span className="hidden text-xs opacity-70 sm:inline">{disclosure.label}</span>
+        <span className="hidden shrink-0 sm:block">
+          <DataFreshnessBadge freshness={freshness} />
+        </span>
+        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
+      </summary>
+
+      <div className="border-t border-current/15 px-3 pb-3 pt-2">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold">{disclosure.label}</span>
+              <span className="text-xs opacity-75">{disclosure.relativeAge}</span>
+            </div>
+            <p className="mt-1 leading-5 opacity-85">{disclosure.detail}</p>
+            <p className="mt-1 text-xs opacity-70">
+              {disclosure.recordsLabel}
+              {disclosure.error ? ` · ${disclosure.error}` : ''}
+            </p>
           </div>
-          <p className="mt-1 leading-5 opacity-85">{freshness.detail}</p>
-          <p className="mt-1 text-xs opacity-70">
-            Last sync: {formatTimestamp(freshness.syncedAt)} · Records: {freshness.recordsRead.toLocaleString()}
-            {freshness.error ? ` · ${freshness.error}` : ''}
-          </p>
         </div>
+        {action ? <div className="mt-3">{action}</div> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
-    </div>
+    </details>
   );
 }

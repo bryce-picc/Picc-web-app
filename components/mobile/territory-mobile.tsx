@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAppAccess } from '@/components/auth/app-access-provider';
+import { ContactCreateFlow } from '@/components/crm/contact-create-flow';
 import { MobileHeader } from '@/components/mobile/mobile-header';
 import { SegmentedControl } from '@/components/mobile/segmented-control';
 import { AccountDetailSheet } from '@/components/mobile/account-detail-sheet';
@@ -816,6 +817,19 @@ export function TerritoryMobile() {
             showBoundaries={showBoundaries}
             onOpenFilters={openFiltersSheet}
             activeFiltersCount={activeFiltersCount}
+            addContactControl={
+              appAccess.canEdit ? (
+                <ContactCreateFlow
+                  triggerVariant="icon"
+                  accounts={stores.map((store) => ({
+                    notionPageId: store.notionPageId,
+                    name: store.name,
+                    city: store.city ?? null,
+                    state: store.state ?? null,
+                  }))}
+                />
+              ) : null
+            }
           />
         </div>
       ) : (

@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { AdvancedDataTable } from '@/components/crm/advanced-data-table';
+import { ContactQuickActions, type ContactQuickActionAccount } from '@/components/crm/contact-quick-actions';
 import { Badge } from '@/components/ui';
 
 export type ContactTableRow = {
@@ -13,9 +14,21 @@ export type ContactTableRow = {
   phone: string;
   status: 'ACTIVE' | 'INACTIVE';
   linkedWork: string;
+  accountPageIds?: string[];
 };
 
-const columns: ColumnDef<ContactTableRow>[] = [
+function normalizePageId(value: string) {
+  return value.replace(/-/g, '').trim().toLowerCase();
+}
+
+export function ContactsTable({ rows, accounts }: { rows: ContactTableRow[]; accounts: ContactQuickActionAccount[] }) {
+  const accountById = new Map(accounts.map((account) => [normalizePageId(account.id), account]));
+  const accountsFor = (row: ContactTableRow) =>
+    (row.accountPageIds ?? [])
+      .map((id) => accountById.get(normalizePageId(id)))
+      .filter((account): account is ContactQuickActionAccount => Boolean(account));
+
+  const columns: ColumnDef<ContactTableRow>[] = [
   {
     accessorKey: 'name',
     header: 'Contact',
@@ -47,12 +60,20 @@ const columns: ColumnDef<ContactTableRow>[] = [
     accessorKey: 'linkedWork',
     header: 'Linked Work',
   },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => (
+      <ContactQuickActions
+        contact={row.original}
+        accounts={accountsFor(row.original)}
+      />
+    ),
+  },
 ];
 
-export function ContactsTable({ rows }: { rows: ContactTableRow[] }) {
   return (
     <AdvancedDataTable
-      title="Contact Directory"
       data={rows}
       columns={columns}
       searchPlaceholder="Search contact, role, or dispensary..."
@@ -68,11 +89,11 @@ export function ContactsTable({ rows }: { rows: ContactTableRow[] }) {
             <Badge variant={row.status === 'ACTIVE' ? 'success' : 'secondary'}>{row.status}</Badge>
           </div>
           <div className="space-y-1 text-sm text-slate-600">
-            <p>{row.accountName}</p>
-            <p>{row.email}</p>
+            <p className="font-medium text-[#344052]">{row.accountName}</p>
+            <p className="break-all">{row.email}</p>
             <p>{row.phone}</p>
-            <p className="text-xs uppercase tracking-wide text-slate-500">{row.linkedWork}</p>
           </div>
+          <ContactQuickActions contact={row} accounts={accountsFor(row)} className="pt-1" />
         </>
       )}
     />

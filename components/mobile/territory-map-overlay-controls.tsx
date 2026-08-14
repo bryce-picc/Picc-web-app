@@ -1,6 +1,7 @@
 'use client';
 
 import { Crosshair, Download, Filter, Layers3, RefreshCw, Search, TrainFront } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { MobileSearch } from '@/components/mobile/mobile-search';
 import type { TerritoryStorePin } from '@/lib/territory/types';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,7 @@ interface TerritoryMapOverlayControlsProps {
   showBoundaries: boolean;
   onOpenFilters: () => void;
   activeFiltersCount: number;
+  addContactControl?: ReactNode;
 }
 
 export function TerritoryMapOverlayControls({
@@ -78,6 +80,7 @@ export function TerritoryMapOverlayControls({
   showBoundaries,
   onOpenFilters,
   activeFiltersCount,
+  addContactControl,
 }: TerritoryMapOverlayControlsProps) {
   return (
     <>
@@ -335,6 +338,7 @@ export function TerritoryMapOverlayControls({
         >
           <TrainFront className={cn('h-5 w-5', showSubwayLines ? 'text-[#cd3814]' : 'text-[#7f828a]')} />
         </button>
+        {addContactControl}
       </div>
     </>
   );

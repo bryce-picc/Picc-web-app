@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Download, Filter, Settings2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
@@ -21,7 +21,7 @@ import { Button, Input } from '@/components/ui';
 interface Props<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  title: string;
+  title?: string;
   searchPlaceholder?: string;
   onExportCsv?: () => void;
   mobileCardRenderer?: (row: TData) => ReactNode;
@@ -71,21 +71,22 @@ export function AdvancedDataTable<TData, TValue>({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-3 rounded-xl border p-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-h2 font-semibold">{title}</h2>
-          <p className="text-sm text-slate-500">Sticky headers, saved views, and bulk actions for power users.</p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="flex flex-col gap-3 rounded-xl border border-[#d8dee8] bg-white p-3 md:flex-row md:items-center md:justify-between">
+        {title ? <h2 className="text-h2 font-semibold">{title}</h2> : null}
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
           <Input
             value={globalFilter}
             onChange={(event) => setGlobalFilter(event.target.value)}
             placeholder={searchPlaceholder}
-            className="h-11 w-full sm:w-[260px]"
+            aria-label={searchPlaceholder}
+            className="h-11 min-w-0 flex-1 border-[#cbd3df] bg-white text-[#18212d] placeholder:text-[#929baa] sm:max-w-[360px] dark:bg-white dark:text-[#18212d] dark:placeholder:text-[#929baa]"
           />
-          <Button variant="secondary" className="h-11 min-w-[44px]"><Filter className="h-4 w-4" /> Filters</Button>
-          <Button variant="secondary" className="h-11 min-w-[44px]"><Settings2 className="h-4 w-4" /> Saved Views</Button>
-          <Button variant="outline" className="h-11 min-w-[44px]" onClick={onExportCsv}><Download className="h-4 w-4" /> Export</Button>
+          {onExportCsv ? (
+            <Button variant="outline" className="h-11 min-w-[44px] shrink-0" onClick={onExportCsv} aria-label="Export CSV">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          ) : null}
         </div>
       </div>
 

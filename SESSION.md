@@ -1,50 +1,44 @@
-# Session: Issue 161 Territory Save Clearance
+# Session: Issue 163 Contact Relationship Workspace Specification
 
 ## Linked work
 
-- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/161
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/162
-- Branch: `codex/161-territory-save-clearance`
+- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
+- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/166
+- Private Linear issue: https://linear.app/bryce-ai/issue/BRY-115/contact-relationship-workspace-gmail-intelligence-and-daily-debrief
+- Private master specification: https://linear.app/bryce-ai/document/picc-contact-relationship-workspace-gmail-intelligence-and-daily-280ea7ef5f65
+- Branch: `codex/163-contact-workspace-spec`
 
 ## Scope
 
-- Keep the territory boundary editor fully above the fixed bottom navigation.
-- Keep the editor body independently scrollable when its point list exceeds the available height.
-- Keep the `Save Boundary` footer visible, keyboard reachable, and clickable at short desktop and mobile viewports.
-- Add focused regression coverage for the reported overlap.
+- Capture the approved contact, account, Gmail, resurfacing, follow-up, and daily-debrief design in one private Linear master specification.
+- Commit only a public-safe pointer and architecture boundary to this public repository.
+- Preserve a complete traceability ledger from every user request and screenshot annotation to a release and acceptance check.
+- Prepare the approved design for a separate implementation-planning pass.
 
 ## Out of scope
 
-- Boundary persistence, API, database, schema, authentication, authorization, or production-data changes.
-- Map-provider, map-control, or primary-navigation redesign.
+- Production source implementation in this specification branch.
+- Production schema, authentication, OAuth, secret, provider, Notion-write, or destructive-data changes.
+- Automatic Apple or Android call, SMS, iMessage, or RCS history synchronization.
 - Changes to `/Users/brycejohnson/Code/map-app`.
 
 ## Constraints
 
-- Reuse the existing `--picc-bottom-nav-clearance` design token.
-- Preserve the current Google Maps boundary editing workflow and fixed primary navigation.
-- Use a failing browser behavior test before implementation.
-- Run `npm run verify` and `npm run test:e2e` before completion.
-- Capture desktop and mobile user-visible evidence.
+- The detailed specification is private PICC operating context and belongs in the PICC-Web-app Linear project.
+- The public GitHub repository receives only the safe skeleton, canonical links, validation boundaries, and non-proprietary architecture boundaries.
+- Implementation must be split into independently testable and reversible releases.
+- No implementation plan starts until the user reviews the written private specification.
 
 ## Ownership and overlap
 
-- Owned paths: `components/mobile/territory-boundary-sheet.tsx`, focused territory editor tests, `SESSION.md`, and UI evidence.
-- Open PRs #160, #144, #135, and #82 were checked.
-- PR #160 owns subway/map-overlay paths but does not own the boundary sheet.
-- PRs #135 and #82 do not overlap.
-- PR #144 is a stale broad monorepo migration that conflicts with the canonical architecture and declares no owned paths.
+- Owned paths: `SESSION.md` and `docs/superpowers/specs/2026-08-14-contact-relationship-workspace-pointer.md`.
+- Open PRs #144, #135, and #82 were checked.
+- None claims the owned specification paths.
+- PR #144 proposes a conflicting monorepo migration, but this branch changes documentation only and does not adopt that architecture.
 
-## Validation evidence
+## Validation plan
 
-- RED: at 1440x800, the primary navigation began at y=704 while `Save Boundary` ended at y=821.5.
-- GREEN: the focused Playwright suite passed all four checks covering real internal scroll movement with a stationary footer, tab-order keyboard save, mobile portrait, mobile landscape with at least a 44px usable form body, short desktop, and the reported 1800x1280 viewport.
-- `npm run verify`: passed lint, typecheck, 27 Vitest files with 126 tests, Prisma validation, and the Next.js production build.
-- `npm run test:e2e`: 22 Playwright tests passed.
-- Read-only review found the initial landscape test allowed a collapsed scroll body; the strengthened test failed at 0px, the height-aware inset was corrected, and the focused four-viewport suite passed again.
-- Desktop screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-desktop.png`.
-- Mobile screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-mobile.png`.
-
-## Remaining verification boundary
-
-The local UI uses intercepted read and save responses and does not mutate production data. Production proof remains pending merge and deployment.
+- Confirm GitHub issue #163 and Linear issue BRY-115 link to one another.
+- Self-review the private master specification for placeholders, contradictions, ambiguity, and missed requests.
+- Confirm the public pointer contains no private sales workflows, Gmail data details, screenshots, or proprietary operating logic.
+- Run documentation-focused diff and link checks before committing.

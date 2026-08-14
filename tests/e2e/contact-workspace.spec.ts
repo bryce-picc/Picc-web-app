@@ -235,9 +235,15 @@ test('add contact supports multiple CRM roles and requires explicit replacement 
 
   await expect(page.getByText('Primary Contact: Existing Buyer')).toBeVisible();
   await expect(page.getByText('Nothing has been overwritten yet.')).toBeVisible();
+  await page.getByLabel('Billing Contact').uncheck();
+  await expect(page.getByRole('button', { name: 'Replace and save' })).toBeHidden();
+  await page.getByLabel('Billing Contact').check();
+  await page.getByRole('button', { name: 'Save contact' }).click();
+  await expect(page.getByRole('button', { name: 'Replace and save' })).toBeVisible();
   await page.getByRole('button', { name: 'Replace and save' }).click();
   await expect(page.getByRole('dialog', { name: 'Add contact' }).getByText('Contact created and linked to the account in Notion.')).toBeVisible();
-  expect(payloads).toHaveLength(2);
+  expect(payloads).toHaveLength(3);
   expect(payloads[0]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: false });
-  expect(payloads[1]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: true });
+  expect(payloads[1]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: false });
+  expect(payloads[2]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: true });
 });

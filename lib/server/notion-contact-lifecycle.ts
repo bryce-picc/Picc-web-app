@@ -1,9 +1,12 @@
 import 'server-only';
 
+import { CONTACT_ROLE_OPTIONS } from '@/lib/contacts/contact-profile';
+
 const NOTION_API_BASE = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2026-03-11';
 
 type NotionPage = { id: string; in_trash?: boolean; parent?: { type?: string; data_source_id?: string }; properties?: Record<string, unknown> };
+type RelationProperty = { id?: string; relation?: Array<{ id?: string }>; has_more?: boolean };
 
 function requiredApiKey() {
   const value = process.env.NOTION_API_KEY?.trim();
@@ -55,8 +58,28 @@ async function loadVerifiedContactPage(contactPageId: string) {
 }
 
 function relationIds(value: unknown) {
-  const relation = (value as { relation?: Array<{ id?: string }> } | undefined)?.relation;
+  const relation = (value as RelationProperty | undefined)?.relation;
   return (relation ?? []).flatMap((item) => item.id ? [item.id] : []);
+}
+
+async function completeRelationIds(pageId: string, value: unknown) {
+  const property = value as RelationProperty | undefined;
+  if (!property?.has_more || !property.id) return relationIds(property);
+
+  const ids: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const query = cursor ? `?start_cursor=${encodeURIComponent(cursor)}` : '';
+    const payload = await notionRequest<{
+      results?: Array<{ relation?: { id?: string } }>;
+      has_more?: boolean;
+      next_cursor?: string | null;
+    }>(`/pages/${pageId}/properties/${encodeURIComponent(property.id)}${query}`);
+    ids.push(...(payload.results ?? []).flatMap((item) => item.relation?.id ? [item.relation.id] : []));
+    cursor = payload.has_more && payload.next_cursor ? payload.next_cursor : undefined;
+  } while (cursor);
+
+  return ids;
 }
 
 function richText(value: unknown) {
@@ -94,16 +117,29 @@ export async function mergeNotionContacts(sourcePageId: string, targetPageId: st
 
   for (const accountId of accountIds) {
     const account = await notionRequest<NotionPage>(`/pages/${accountId}`);
-    const current = relationIds(account.properties?.['Associated Contacts']);
+    const current = await completeRelationIds(accountId, account.properties?.['Associated Contacts']);
     const next = [...new Map(
       current
         .filter((id) => normalizeId(id) !== normalizeId(sourcePageId))
         .concat(targetPageId)
         .map((id) => [normalizeId(id), id]),
     ).values()];
+    const accountProperties: Record<string, unknown> = {
+      'Associated Contacts': { relation: next.map((id) => ({ id })) },
+    };
+    for (const role of CONTACT_ROLE_OPTIONS) {
+      const currentRoleIds = await completeRelationIds(accountId, account.properties?.[role.notionProperty]);
+      if (!currentRoleIds.some((id) => normalizeId(id) === normalizeId(sourcePageId))) continue;
+      const nextRoleIds = [...new Map(
+        currentRoleIds
+          .map((id) => normalizeId(id) === normalizeId(sourcePageId) ? targetPageId : id)
+          .map((id) => [normalizeId(id), id]),
+      ).values()];
+      accountProperties[role.notionProperty] = { relation: nextRoleIds.map((id) => ({ id })) };
+    }
     await notionRequest(`/pages/${accountId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ properties: { 'Associated Contacts': { relation: next.map((id) => ({ id })) } } }),
+      body: JSON.stringify({ properties: accountProperties }),
     });
   }
 

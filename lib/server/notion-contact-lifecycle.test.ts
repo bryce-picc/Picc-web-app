@@ -43,7 +43,19 @@ describe('Notion contact lifecycle', () => {
         id: 'target', in_trash: false, parent: { type: 'data_source_id', data_source_id: 'contacts-source' },
         properties: { Dispensary: { relation: [{ id: 'account-b' }] }, Email: { email: null }, 'Phone Number': { phone_number: '+12125550200' }, 'Contact Position': { rich_text: [] } },
       });
-      if (url.endsWith('/pages/account-a') && !init?.method) return response({ id: 'account-a', properties: { 'Associated Contacts': { relation: [{ id: 'source' }, { id: 'other' }] } } });
+      if (url.includes('/pages/account-a/properties/associated-property')) return response({
+        results: [{ relation: { id: 'source' } }, { relation: { id: 'other' } }, { relation: { id: 'contact-26' } }],
+        has_more: false,
+        next_cursor: null,
+      });
+      if (url.endsWith('/pages/account-a') && !init?.method) return response({
+        id: 'account-a',
+        properties: {
+          'Associated Contacts': { id: 'associated-property', relation: [{ id: 'source' }, { id: 'other' }], has_more: true },
+          'Primary Contact': { relation: [{ id: 'source' }] },
+          'Billing Contact': { relation: [{ id: 'billing-contact' }] },
+        },
+      });
       if (url.endsWith('/pages/account-b') && !init?.method) return response({ id: 'account-b', properties: { 'Associated Contacts': { relation: [{ id: 'target' }] } } });
       return response({ id: String(url).split('/').at(-1) });
     });
@@ -61,7 +73,9 @@ describe('Notion contact lifecycle', () => {
     expect(targetPatch.properties['Phone Number']).toBeUndefined();
     const accountPatchCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/pages/account-a') && init?.method === 'PATCH');
     const accountPatch = JSON.parse(String(accountPatchCall?.[1]?.body));
-    expect(accountPatch.properties['Associated Contacts'].relation).toEqual([{ id: 'other' }, { id: 'target' }]);
+    expect(accountPatch.properties['Associated Contacts'].relation).toEqual([{ id: 'other' }, { id: 'contact-26' }, { id: 'target' }]);
+    expect(accountPatch.properties['Primary Contact'].relation).toEqual([{ id: 'target' }]);
+    expect(accountPatch.properties['Billing Contact']).toBeUndefined();
     const sourceTrashCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/pages/source') && init?.method === 'PATCH');
     expect(JSON.parse(String(sourceTrashCall?.[1]?.body))).toEqual({ in_trash: true });
   });

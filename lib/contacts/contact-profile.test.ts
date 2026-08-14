@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildContactVCard,
   buildRoleCollisionPreview,
+  contactProfilePermissions,
   CONTACT_ROLE_OPTIONS,
   validateContactMerge,
 } from '@/lib/contacts/contact-profile';
@@ -46,6 +47,15 @@ describe('contact role collision preview', () => {
 });
 
 describe('contact profile utilities', () => {
+  it('matches contact profile controls to API role guards', () => {
+    expect(contactProfilePermissions('ADMIN')).toEqual({ canEditProfile: true, canManageLifecycle: true, canDeleteOrMerge: true });
+    expect(contactProfilePermissions('OPS_TEAM')).toEqual({ canEditProfile: true, canManageLifecycle: true, canDeleteOrMerge: true });
+    expect(contactProfilePermissions('SALES_REP')).toEqual({ canEditProfile: true, canManageLifecycle: true, canDeleteOrMerge: false });
+    expect(contactProfilePermissions('BRAND_AMBASSADOR')).toEqual({ canEditProfile: true, canManageLifecycle: false, canDeleteOrMerge: false });
+    expect(contactProfilePermissions('FINANCE')).toEqual({ canEditProfile: false, canManageLifecycle: false, canDeleteOrMerge: false });
+    expect(contactProfilePermissions('GUEST_VIEWER')).toEqual({ canEditProfile: false, canManageLifecycle: false, canDeleteOrMerge: false });
+  });
+
   it('builds an importable vCard with escaped values and supported social links', () => {
     const card = buildContactVCard({
       name: 'Mara Vega',

@@ -146,12 +146,12 @@ describe('contact write routes', () => {
     const { POST } = await import('@/app/api/contacts/retry/route');
 
     const response = (await POST(
-      request('/api/contacts/retry', { accountPageId, contactPageId }),
+      request('/api/contacts/retry', { accountPageId, contactPageId, roles: ['PRIMARY_CONTACT'] }),
     )) as Response;
 
     expect(response.status).toBe(200);
     expect(vi.mocked(domain.retryVerifiedContactLink)).toHaveBeenCalledWith(
-      { accountPageId, contactPageId },
+      { accountPageId, contactPageId, roles: ['PRIMARY_CONTACT'] },
       { boundary: 'notion' },
     );
   });

@@ -84,6 +84,19 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
   );
   const selectedAccount = availableAccounts.find((account) => account.notionPageId === draft.accountPageId);
 
+  function selectAccount(accountPageId: string) {
+    setRoleCollisions([]);
+    setDraft((current) => ({ ...current, accountPageId }));
+  }
+
+  function toggleRole(role: ContactRole, checked: boolean) {
+    setRoleCollisions([]);
+    setDraft((current) => ({
+      ...current,
+      roles: checked ? current.roles.filter((value) => value !== role) : [...current.roles, role],
+    }));
+  }
+
   function changeOpen(nextOpen: boolean) {
     setOpen(nextOpen);
     if (!nextOpen) {
@@ -218,7 +231,7 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
                       <p className="truncate text-sm font-semibold text-[#18212d]">{selectedAccount.name}</p>
                       <p className="text-xs text-[#6a7483]">{[selectedAccount.city, selectedAccount.state].filter(Boolean).join(', ') || 'Location unavailable'}</p>
                     </div>
-                    <button type="button" onClick={() => setDraft((current) => ({ ...current, accountPageId: '' }))} className="text-sm font-semibold text-[#c93412]">Change</button>
+                    <button type="button" onClick={() => selectAccount('')} className="text-sm font-semibold text-[#c93412]">Change</button>
                   </div>
                 ) : (
                   <div className="mt-2 overflow-hidden rounded-xl border border-[#cfd6e1] bg-white">
@@ -231,7 +244,7 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
                       {loadingAccounts ? (
                         <p className="flex items-center justify-center gap-2 px-3 py-6 text-sm text-[#77818f]"><Loader2 className="h-4 w-4 animate-spin" /> Loading accounts…</p>
                       ) : filteredAccounts.length ? filteredAccounts.map((account) => (
-                        <button key={account.notionPageId} type="button" onClick={() => setDraft((current) => ({ ...current, accountPageId: account.notionPageId }))} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[#f1f4f8]">
+                        <button key={account.notionPageId} type="button" onClick={() => selectAccount(account.notionPageId)} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[#f1f4f8]">
                           <span className="truncate text-sm font-medium text-[#253142]">{account.name}</span>
                           <span className="shrink-0 text-xs text-[#7a8492]">{[account.city, account.state].filter(Boolean).join(', ')}</span>
                         </button>
@@ -259,10 +272,7 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={() => setDraft((current) => ({
-                            ...current,
-                            roles: checked ? current.roles.filter((value) => value !== role.value) : [...current.roles, role.value],
-                          }))}
+                          onChange={() => toggleRole(role.value, checked)}
                           className="h-4 w-4 accent-[#c93412]"
                         />
                         {role.label}

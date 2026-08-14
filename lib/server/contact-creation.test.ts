@@ -149,6 +149,28 @@ describe('verified contact creation', () => {
     expect(adapter.refreshContacts).not.toHaveBeenCalled();
   });
 
+  it('preserves selected roles in retry context and assigns them again during repair', async () => {
+    const adapter = fakeAdapter({ existing: null, verify: false });
+    const roles = ['PRIMARY_CONTACT', 'BILLING_CONTACT'] as const;
+
+    const initial = await createVerifiedContact(input({ roles: [...roles] }), adapter);
+
+    expect(initial).toMatchObject({
+      status: 'partial_relation',
+      retry: { accountPageId: 'account-page', contactPageId: 'contact-page', roles: [...roles] },
+    });
+
+    adapter.verifyBothSides.mockResolvedValue(true);
+    adapter.assignRoles.mockClear();
+    const retried = await retryVerifiedContactLink(
+      { accountPageId: 'account-page', contactPageId: 'contact-page', roles: [...roles] },
+      adapter,
+    );
+
+    expect(retried.status).toBe('existing_verified');
+    expect(adapter.assignRoles).toHaveBeenCalledWith('account-page', 'contact-page', [...roles]);
+  });
+
   it('retries relationship repair without creating another contact', async () => {
     const adapter = fakeAdapter({ verify: true });
 

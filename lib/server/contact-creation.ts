@@ -35,6 +35,7 @@ export type ContactCreationOutcome =
       retry: {
         accountPageId: string;
         contactPageId: string;
+        roles?: ContactRole[];
       };
     }
   | {
@@ -47,6 +48,7 @@ export type ContactCreationOutcome =
 export type RetryContactLinkInput = {
   accountPageId: string;
   contactPageId: string;
+  roles?: ContactRole[];
 };
 
 export interface ContactCreationAdapter {
@@ -71,6 +73,7 @@ export function normalizeContactName(value: string) {
 function partialOutcome(
   accountPageId: string,
   contact: ContactRecord,
+  roles: ContactRole[] = [],
 ): ContactCreationOutcome {
   return {
     status: 'partial_relation',
@@ -79,6 +82,7 @@ function partialOutcome(
     retry: {
       accountPageId,
       contactPageId: contact.id,
+      ...(roles.length > 0 ? { roles } : {}),
     },
   };
 }
@@ -98,7 +102,7 @@ async function finishRelationship(
     }
     const verified = await adapter.verifyBothSides(accountPageId, contact.id);
     if (!verified) {
-      return partialOutcome(accountPageId, contact);
+      return partialOutcome(accountPageId, contact, roles);
     }
 
     await adapter.refreshContacts().catch(() => undefined);
@@ -108,7 +112,7 @@ async function finishRelationship(
       accountPageId,
     };
   } catch {
-    return partialOutcome(accountPageId, contact);
+    return partialOutcome(accountPageId, contact, roles);
   }
 }
 
@@ -154,5 +158,5 @@ export async function retryVerifiedContactLink(
 ): Promise<ContactCreationOutcome> {
   await adapter.requireAccount(input.accountPageId);
   const contact = await adapter.getContact(input.contactPageId);
-  return finishRelationship(input.accountPageId, contact, adapter, 'existing_verified');
+  return finishRelationship(input.accountPageId, contact, adapter, 'existing_verified', input.roles ?? []);
 }

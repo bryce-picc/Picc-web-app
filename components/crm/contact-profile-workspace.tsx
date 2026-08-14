@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { ContactQuickActions, type ContactQuickActionAccount } from '@/components/crm/contact-quick-actions';
 import { useAppAccess } from '@/components/auth/app-access-provider';
 import type { RuntimeContactSummary } from '@/lib/runtime/account-contact-contract';
-import { buildContactVCard, validateContactMerge } from '@/lib/contacts/contact-profile';
+import { buildContactVCard, contactProfilePermissions, validateContactMerge } from '@/lib/contacts/contact-profile';
 import { cn } from '@/lib/utils';
 
 type Reminder = { id: string; dueAt: string; note: string; status: string };
@@ -48,7 +48,7 @@ function formatWhen(value: string | null) {
 
 export function ContactProfileWorkspace({ contact, accounts, contacts }: { contact: RuntimeContactSummary; accounts: ContactQuickActionAccount[]; contacts: RuntimeContactSummary[] }) {
   const appAccess = useAppAccess();
-  const canMaintainContacts = appAccess.role === 'ADMIN' || appAccess.role === 'OPS_TEAM';
+  const { canEditProfile, canManageLifecycle, canDeleteOrMerge } = contactProfilePermissions(appAccess.role);
   const [profile, setProfile] = useState<ProfilePayload>(blankProfile);
   const [tab, setTab] = useState<'timeline' | 'reminders' | 'details'>('timeline');
   const [loading, setLoading] = useState(true);
@@ -203,15 +203,15 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
         <div className="flex items-center justify-between">
           <Link href="/contacts" className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[#526071] hover:bg-white"><ChevronLeft className="h-4 w-4" /> Contacts</Link>
           <div className="relative flex items-center gap-1">
-            <button type="button" onClick={() => { const next = { ...profile, favorite: !profile.favorite }; setProfile(next); void saveProfile(next); }} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white" aria-label={profile.favorite ? 'Remove from favorites' : 'Add to favorites'}>
+            {canEditProfile ? <button type="button" disabled={loading || saving} onClick={() => { const next = { ...profile, favorite: !profile.favorite }; setProfile(next); void saveProfile(next); }} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white disabled:cursor-not-allowed disabled:opacity-50" aria-label={profile.favorite ? 'Remove from favorites' : 'Add to favorites'}>
               <Star className={cn('h-5 w-5', profile.favorite ? 'fill-amber-400 text-amber-500' : 'text-[#657081]')} />
-            </button>
-            <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white" aria-label="Contact options"><MoreHorizontal className="h-5 w-5" /></button>
+            </button> : profile.favorite ? <span className="grid h-11 w-11 place-items-center" aria-label="Favorite contact"><Star className="h-5 w-5 fill-amber-400 text-amber-500" /></span> : null}
+            {canManageLifecycle || canDeleteOrMerge ? <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white" aria-label="Contact options"><MoreHorizontal className="h-5 w-5" /></button> : null}
             {menuOpen ? (
               <div className="absolute right-0 top-12 z-30 w-56 rounded-xl border border-[#d5dce7] bg-white p-1.5 shadow-xl">
-                {canMaintainContacts ? <button type="button" onClick={() => { setMenuOpen(false); setMergeOpen(true); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-[#f1f4f8]"><UsersRound className="h-4 w-4" /> Merge with</button> : null}
-                <button type="button" onClick={() => void lifecycle(profile.archivedAt ? 'unarchive' : 'archive')} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-[#f1f4f8]"><Archive className="h-4 w-4" /> {profile.archivedAt ? 'Restore' : 'Archive'}</button>
-                {canMaintainContacts ? <button type="button" onClick={() => { setMenuOpen(false); setConfirmDelete(true); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold text-red-700 hover:bg-red-50"><Trash2 className="h-4 w-4" /> Delete</button> : null}
+                {canDeleteOrMerge ? <button type="button" onClick={() => { setMenuOpen(false); setMergeOpen(true); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-[#f1f4f8]"><UsersRound className="h-4 w-4" /> Merge with</button> : null}
+                {canManageLifecycle ? <button type="button" onClick={() => void lifecycle(profile.archivedAt ? 'unarchive' : 'archive')} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-[#f1f4f8]"><Archive className="h-4 w-4" /> {profile.archivedAt ? 'Restore' : 'Archive'}</button> : null}
+                {canDeleteOrMerge ? <button type="button" onClick={() => { setMenuOpen(false); setConfirmDelete(true); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold text-red-700 hover:bg-red-50"><Trash2 className="h-4 w-4" /> Delete</button> : null}
               </div>
             ) : null}
           </div>
@@ -257,28 +257,28 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
 
         {!loading && tab === 'reminders' ? (
           <section className="mt-4 space-y-3">
-            <div className="rounded-xl border border-[#dce2eb] bg-white p-4">
+            {canEditProfile ? <div className="rounded-xl border border-[#dce2eb] bg-white p-4">
               <h2 className="font-semibold">New reminder</h2>
               <div className="mt-3 grid gap-2 sm:grid-cols-[160px_minmax(0,1fr)_auto]">
                 <input type="date" value={reminderDate} onChange={(event) => setReminderDate(event.target.value)} className="h-11 rounded-lg border border-[#cbd3df] px-3" aria-label="Reminder date" />
                 <input value={reminderNote} onChange={(event) => setReminderNote(event.target.value)} placeholder="What should happen next?" className="h-11 rounded-lg border border-[#cbd3df] px-3" />
                 <button type="button" onClick={() => void addReminder()} disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#c93412] px-4 font-semibold text-white disabled:opacity-50"><BellPlus className="h-4 w-4" /> Add</button>
               </div>
-            </div>
-            {profile.reminders.length ? profile.reminders.map((reminder) => <div key={reminder.id} className={cn('rounded-xl border border-[#dce2eb] bg-white px-4 py-3', reminder.status !== 'OPEN' && 'opacity-60')}><div className="flex items-start justify-between gap-3"><div><p className={cn('font-semibold', reminder.status !== 'OPEN' && 'line-through')}>{reminder.note}</p><p className="mt-1 text-sm text-[#687486]">Due {formatWhen(reminder.dueAt)} · {reminder.status.toLowerCase()}</p></div>{reminder.status === 'OPEN' ? <div className="flex shrink-0 gap-1"><button type="button" onClick={() => void updateReminder(reminder.id, 'DONE')} className="grid h-10 w-10 place-items-center rounded-lg border border-[#cbd3df]" aria-label={`Complete reminder ${reminder.note}`}><Check className="h-4 w-4" /></button><button type="button" onClick={() => void updateReminder(reminder.id, 'CANCELLED')} className="grid h-10 w-10 place-items-center rounded-lg border border-[#cbd3df]" aria-label={`Dismiss reminder ${reminder.note}`}><X className="h-4 w-4" /></button></div> : null}</div></div>) : <EmptyState title="No reminders" detail="Add a reminder so this relationship does not go quiet." />}
+            </div> : null}
+            {profile.reminders.length ? profile.reminders.map((reminder) => <div key={reminder.id} className={cn('rounded-xl border border-[#dce2eb] bg-white px-4 py-3', reminder.status !== 'OPEN' && 'opacity-60')}><div className="flex items-start justify-between gap-3"><div><p className={cn('font-semibold', reminder.status !== 'OPEN' && 'line-through')}>{reminder.note}</p><p className="mt-1 text-sm text-[#687486]">Due {formatWhen(reminder.dueAt)} · {reminder.status.toLowerCase()}</p></div>{reminder.status === 'OPEN' && canEditProfile ? <div className="flex shrink-0 gap-1"><button type="button" onClick={() => void updateReminder(reminder.id, 'DONE')} className="grid h-10 w-10 place-items-center rounded-lg border border-[#cbd3df]" aria-label={`Complete reminder ${reminder.note}`}><Check className="h-4 w-4" /></button><button type="button" onClick={() => void updateReminder(reminder.id, 'CANCELLED')} className="grid h-10 w-10 place-items-center rounded-lg border border-[#cbd3df]" aria-label={`Dismiss reminder ${reminder.note}`}><X className="h-4 w-4" /></button></div> : null}</div></div>) : <EmptyState title="No reminders" detail={canEditProfile ? 'Add a reminder so this relationship does not go quiet.' : 'No reminders are recorded for this contact.'} />}
           </section>
         ) : null}
 
         {!loading && tab === 'details' ? (
           <section className="mt-4 rounded-xl border border-[#dce2eb] bg-white p-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <ProfileField label="Contact frequency (days)"><input type="number" min={1} max={365} value={profile.frequencyDays ?? ''} onChange={(event) => setProfile((current) => ({ ...current, frequencyDays: event.target.value ? Number(event.target.value) : null }))} /></ProfileField>
-              <ProfileField label="Last seen"><input type="date" value={dateInputValue(profile.lastSeenAt)} onChange={(event) => setProfile((current) => ({ ...current, lastSeenAt: event.target.value ? new Date(`${event.target.value}T12:00:00`).toISOString() : null }))} /></ProfileField>
-              <ProfileField label="Instagram"><input type="url" placeholder="https://instagram.com/..." value={profile.instagramUrl ?? ''} onChange={(event) => setProfile((current) => ({ ...current, instagramUrl: event.target.value }))} /></ProfileField>
-              <ProfileField label="LinkedIn"><input type="url" placeholder="https://linkedin.com/in/..." value={profile.linkedinUrl ?? ''} onChange={(event) => setProfile((current) => ({ ...current, linkedinUrl: event.target.value }))} /></ProfileField>
+              <ProfileField label="Contact frequency (days)"><input disabled={!canEditProfile} type="number" min={1} max={365} value={profile.frequencyDays ?? ''} onChange={(event) => setProfile((current) => ({ ...current, frequencyDays: event.target.value ? Number(event.target.value) : null }))} /></ProfileField>
+              <ProfileField label="Last seen"><input disabled={!canEditProfile} type="date" value={dateInputValue(profile.lastSeenAt)} onChange={(event) => setProfile((current) => ({ ...current, lastSeenAt: event.target.value ? new Date(`${event.target.value}T12:00:00`).toISOString() : null }))} /></ProfileField>
+              <ProfileField label="Instagram"><input disabled={!canEditProfile} type="url" placeholder="https://instagram.com/..." value={profile.instagramUrl ?? ''} onChange={(event) => setProfile((current) => ({ ...current, instagramUrl: event.target.value }))} /></ProfileField>
+              <ProfileField label="LinkedIn"><input disabled={!canEditProfile} type="url" placeholder="https://linkedin.com/in/..." value={profile.linkedinUrl ?? ''} onChange={(event) => setProfile((current) => ({ ...current, linkedinUrl: event.target.value }))} /></ProfileField>
             </div>
             <div className="mt-4 grid gap-2 rounded-lg bg-[#f4f6f9] p-3 text-sm sm:grid-cols-2"><p><span className="font-semibold">Email:</span> {contact.email}</p><p><span className="font-semibold">Phone:</span> {contact.phone}</p><p><span className="font-semibold">Company:</span> {contact.accountName}</p><p><span className="font-semibold">Source:</span> {contact.linkedWork}</p></div>
-            <button type="button" onClick={() => void saveProfile()} disabled={saving} className="mt-4 min-h-11 rounded-lg bg-[#c93412] px-5 font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : 'Save details'}</button>
+            {canEditProfile ? <button type="button" onClick={() => void saveProfile()} disabled={saving} className="mt-4 min-h-11 rounded-lg bg-[#c93412] px-5 font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : 'Save details'}</button> : null}
           </section>
         ) : null}
       </div>

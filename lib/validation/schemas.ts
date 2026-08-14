@@ -42,6 +42,7 @@ export const notionContactCreateSchema = z.object({
 export const notionContactRetrySchema = z.object({
   accountPageId: notionPageIdSchema,
   contactPageId: notionPageIdSchema,
+  roles: z.array(z.enum(['PRIMARY_CONTACT', 'SECOND_CONTACT', 'PPP_2', 'PPP_3', 'BILLING_CONTACT'])).max(5).optional(),
 });
 
 export const quickLogSchema = z.object({

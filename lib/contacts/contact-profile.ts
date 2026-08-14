@@ -1,4 +1,5 @@
 import { normalizeContactPhone } from '@/lib/contacts/contact-actions';
+import type { AppRole } from '@/lib/types/rbac';
 
 export const CONTACT_ROLE_OPTIONS = [
   { value: 'PRIMARY_CONTACT', label: 'Primary Contact', notionProperty: 'Primary Contact' },
@@ -11,6 +12,13 @@ export const CONTACT_ROLE_OPTIONS = [
 export type ContactRole = (typeof CONTACT_ROLE_OPTIONS)[number]['value'];
 
 export type ExistingRoleAssignment = { id: string; name: string };
+
+export function contactProfilePermissions(role: AppRole) {
+  const canEditProfile = role === 'ADMIN' || role === 'OPS_TEAM' || role === 'SALES_REP' || role === 'BRAND_AMBASSADOR';
+  const canManageLifecycle = role === 'ADMIN' || role === 'OPS_TEAM' || role === 'SALES_REP';
+  const canDeleteOrMerge = role === 'ADMIN' || role === 'OPS_TEAM';
+  return { canEditProfile, canManageLifecycle, canDeleteOrMerge };
+}
 
 const roleOptionByValue = new Map(CONTACT_ROLE_OPTIONS.map((option) => [option.value, option]));
 

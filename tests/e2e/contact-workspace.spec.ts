@@ -247,3 +247,56 @@ test('add contact supports multiple CRM roles and requires explicit replacement 
   expect(payloads[1]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: false });
   expect(payloads[2]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: true });
 });
+
+test('reviews Gmail suggestions before quick-adding a prefilled contact', async ({ page }) => {
+  await page.route('**/api/integrations/gmail/suggestions', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        mailboxEmail: 'rep@picc.co',
+        suggestions: [{ name: 'Taylor Morgan', email: 'taylor@example.com', messageCount: 4, lastInteractionAt: '2026-08-13T16:00:00.000Z' }],
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/contacts');
+  await page.getByRole('button', { name: 'Find suggested contacts in Gmail' }).click();
+  await expect(page.getByText('Taylor Morgan')).toBeVisible();
+  await expect(page.getByText('4 recent emails')).toBeVisible();
+  await page.getByRole('link', { name: 'Quick add' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Add contact' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Full name *')).toHaveValue('Taylor Morgan');
+  await expect(dialog.getByLabel('Email')).toHaveValue('taylor@example.com');
+});
+
+test('lets the signed-in rep inspect and explicitly disconnect their Gmail', async ({ page }) => {
+  let connected = true;
+  await page.route('**/api/integrations/gmail', async (route) => {
+    if (route.request().method() === 'DELETE') {
+      connected = false;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        configuration: { configured: true, redirectUri: 'https://app.example/api/integrations/gmail/callback' },
+        connection: connected ? { mailboxEmail: 'rep@picc.co', status: 'SUCCESS', lastSyncedAt: '2026-08-14T16:00:00.000Z', lastError: null, updatedAt: '2026-08-14T16:00:00.000Z' } : null,
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/settings#connected-services');
+  await expect(page.getByText('rep@picc.co')).toBeVisible();
+  await page.getByRole('button', { name: 'Disconnect' }).click();
+  await expect(page.getByRole('button', { name: 'Confirm disconnect' })).toBeVisible();
+  await page.getByRole('button', { name: 'Confirm disconnect' }).click();
+  await expect(page.getByText('Not connected')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Connect my Gmail' })).toBeVisible();
+});

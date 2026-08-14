@@ -11,6 +11,7 @@ import { WorkspacePanel, WorkspacePanelHeader } from '@/components/layout/worksp
 import { AdminOpsPanel } from '@/components/settings/admin-ops-panel';
 import { NabisSyncAdminPanel } from '@/components/settings/nabis-sync-admin-panel';
 import { GoogleUsageBudgetCard } from '@/components/territory/google-usage-budget-card';
+import { GmailConnectionCard } from '@/components/settings/gmail-connection-card';
 import { Button, Input, Textarea } from '@/components/ui';
 import { RoleDisplayNames } from '@/lib/types/rbac';
 
@@ -161,6 +162,11 @@ export function SettingsMobile({ embedded = false }: { embedded?: boolean }) {
           id: 'access-usage',
           label: 'Access & Usage',
           description: 'Usage budget, connected services, and workspace health.',
+        },
+        {
+          id: 'connected-services',
+          label: 'Connected Services',
+          description: 'Connect your individual Gmail account and inspect its status.',
         },
         ...(canViewTeamActivity
           ? [
@@ -652,6 +658,17 @@ export function SettingsMobile({ embedded = false }: { embedded?: boolean }) {
             description="Keep workspace usage signals close to settings instead of hiding them behind a separate menu."
           />
           <GoogleUsageBudgetCard compact />
+        </WorkspacePanel>
+      </section>
+
+      <section id="connected-services" className="scroll-mt-28">
+        <WorkspacePanel className="space-y-4">
+          <WorkspacePanelHeader
+            eyebrow="Connected Services"
+            title="Your communication accounts"
+            description="Connections belong to the signed-in rep and can be removed here at any time."
+          />
+          <GmailConnectionCard />
         </WorkspacePanel>
       </section>
 

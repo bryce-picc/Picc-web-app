@@ -1,44 +1,41 @@
-# Session: Issue 163 Mobile CRM UI Foundation
+# Session: Issue 163 Mobile CRM Record Management
 
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
-- Branch: `codex/163-contact-foundation`
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/167
+- Branch: `codex/163-contact-profiles`
+- Base branch: `codex/163-contact-foundation`
+- Draft PR: pending
 
 ## Scope
 
-- Improve reusable mobile CRM status and navigation components.
-- Improve readability and interaction consistency across related CRM views.
-- Add focused regression coverage for the changed user flows.
+- Improve mobile CRM record-management usability through existing app boundaries.
+- Add safe, explicit controls for supported record metadata and maintenance workflows.
+- Add focused deterministic and mobile-browser coverage.
 
 ## Out of scope
 
-- Database, authentication, permissions, secrets, external integrations, and production-data changes.
+- New provider integrations, device-history ingestion, and scheduled reporting.
+- Production-data changes during verification.
 - Changes to `/Users/brycejohnson/Code/map-app`.
 
 ## Constraints
 
-- Preserve the current PWA shell and server boundaries.
+- Preserve the current PWA shell, tenant scope, permissions, and explicit external-service boundaries.
 - Use RED-first tests for behavior changes.
 - Run `npm run verify` and `npm run test:e2e`.
 - Capture mobile browser proof for changed UI flows.
 
 ## Ownership and overlap
 
-- Owned paths: shared CRM presentation components, affected mobile CRM views, focused tests, `SESSION.md`, and UI evidence.
-- Checked open PRs #166, #144, #135, and #82 before source edits.
-- PR #166 is documentation-only. PR #135 has a stale, narrow overlap in Account Details; the implementation here is additive and will be rebased if #135 lands first.
+- Owned paths: focused mobile CRM UI and domain/server boundaries, tests, `SESSION.md`, and UI evidence.
+- Stacked on draft PR #167 for the shared action foundation.
+- Open PR overlap check pending before source edits.
 
 ## Validation evidence
 
-- Baseline: 28 Vitest files and 134 tests passed under Node 22.22.0.
-- RED/GREEN: focused presentation and interaction contract tests cover compact sync summaries, Gmail/SMS/phone links, and follow-up request payloads.
-- Targeted mobile Playwright: 2 tests passed for dense account cards, alphabet-rail clearance, New Follow-Up, direct Account Details contact actions, and the post-action prompt.
-- Browser evidence: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/accounts-mobile-contact-foundation.png` and `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/account-contact-actions-follow-up.png`.
-- `npm run verify`: passed (lint, typecheck, 31 Vitest files / 141 tests, Prisma validation, production build).
-- `npm run test:e2e`: 25 browser tests passed under Node 22.22.0.
-- Final diff check: `git diff --check` passed.
+- Baseline inherited from #167: `npm run verify` passed (31 Vitest files / 141 tests plus lint, typecheck, Prisma validation, and build); `npm run test:e2e` passed (25 tests).
+- Slice-specific RED/GREEN and browser evidence pending.
 
 ## Remaining verification boundary
 

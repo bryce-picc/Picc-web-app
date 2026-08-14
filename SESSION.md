@@ -3,6 +3,7 @@
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
+- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/166
 - Private Linear issue: https://linear.app/bryce-ai/issue/BRY-115/contact-relationship-workspace-gmail-intelligence-and-daily-debrief
 - Private master specification: https://linear.app/bryce-ai/document/picc-contact-relationship-workspace-gmail-intelligence-and-daily-280ea7ef5f65
 - Branch: `codex/163-contact-workspace-spec`

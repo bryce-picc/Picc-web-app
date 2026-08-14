@@ -92,8 +92,9 @@ function scalar(value: unknown, key: 'email' | 'phone_number') {
   return typeof result === 'string' && result.trim() ? result : null;
 }
 
-export async function trashNotionContact(contactPageId: string) {
-  await loadVerifiedContactPage(contactPageId);
+export async function trashNotionContact(contactPageId: string, options: { allowAlreadyTrashed?: boolean } = {}) {
+  const page = await loadVerifiedContactPage(contactPageId, options.allowAlreadyTrashed);
+  if (page.in_trash && options.allowAlreadyTrashed) return;
   await notionRequest(`/pages/${contactPageId}`, { method: 'PATCH', body: JSON.stringify({ in_trash: true }) });
 }
 

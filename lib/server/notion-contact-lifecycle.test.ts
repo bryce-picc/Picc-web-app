@@ -102,4 +102,16 @@ describe('Notion contact lifecycle', () => {
     await expect(mergeNotionContacts('source', 'target', { allowAlreadyTrashed: true })).resolves.toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
+
+  it('allows an explicit delete retry to finish when the contact is already in Notion trash', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.endsWith('/databases/contacts-db')) return response({ data_sources: [{ id: 'contacts-source' }] });
+      if (url.endsWith('/pages/source')) return response({ id: 'source', in_trash: true, parent: { type: 'data_source_id', data_source_id: 'contacts-source' }, properties: {} });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(trashNotionContact('source', { allowAlreadyTrashed: true })).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

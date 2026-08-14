@@ -45,7 +45,7 @@ export function ContactQuickActions({
   accounts: ContactQuickActionAccount[];
   className?: string;
   labels?: 'responsive' | 'always';
-  onActivityLogged?: (occurredAt: string) => void;
+  onActivityLogged?: (activity: { id: string; summary: string; channel: string | null; occurredAt: string; externalUrl: string | null }) => void;
 }) {
   const [pendingAction, setPendingAction] = useState<ContactActionKind | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState(accounts.length === 1 ? accounts[0]?.id ?? '' : '');
@@ -133,8 +133,17 @@ export function ContactQuickActions({
                 })
                   .then(async (response) => {
                     if (!response.ok) return;
-                    const payload = (await response.json()) as { activity?: { occurredAt?: string } };
-                    if (payload.activity?.occurredAt) onActivityLogged?.(payload.activity.occurredAt);
+                    const payload = (await response.json()) as { activity?: { id?: string; summary?: string; channel?: string | null; occurredAt?: string; externalUrl?: string | null } };
+                    const activity = payload.activity;
+                    if (activity?.id && activity.summary && activity.occurredAt) {
+                      onActivityLogged?.({
+                        id: activity.id,
+                        summary: activity.summary,
+                        channel: activity.channel ?? null,
+                        occurredAt: activity.occurredAt,
+                        externalUrl: activity.externalUrl ?? null,
+                      });
+                    }
                   })
                   .catch(() => undefined);
               }

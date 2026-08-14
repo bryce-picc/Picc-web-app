@@ -199,7 +199,7 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
             {canEditProfile ? <button type="button" disabled={loading || saving} onClick={() => { const favorite = !profile.favorite; setProfile((current) => ({ ...current, favorite })); void saveProfile({ favorite }); }} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white disabled:cursor-not-allowed disabled:opacity-50" aria-label={profile.favorite ? 'Remove from favorites' : 'Add to favorites'}>
               <Star className={cn('h-5 w-5', profile.favorite ? 'fill-amber-400 text-amber-500' : 'text-[#657081]')} />
             </button> : profile.favorite ? <span className="grid h-11 w-11 place-items-center" aria-label="Favorite contact"><Star className="h-5 w-5 fill-amber-400 text-amber-500" /></span> : null}
-            {canManageLifecycle || canDeleteOrMerge ? <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white" aria-label="Contact options"><MoreHorizontal className="h-5 w-5" /></button> : null}
+            {canManageLifecycle || canDeleteOrMerge ? <button type="button" disabled={loading || saving} onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white disabled:cursor-not-allowed disabled:opacity-50" aria-label="Contact options"><MoreHorizontal className="h-5 w-5" /></button> : null}
             {menuOpen ? (
               <div className="absolute right-0 top-12 z-30 w-56 rounded-xl border border-[#d5dce7] bg-white p-1.5 shadow-xl">
                 {canDeleteOrMerge ? <button type="button" onClick={() => { setMenuOpen(false); setMergeOpen(true); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-[#f1f4f8]"><UsersRound className="h-4 w-4" /> Merge with</button> : null}
@@ -223,7 +223,13 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <ContactQuickActions contact={contact} accounts={accounts} labels="always" onActivityLogged={(occurredAt) => setProfile((current) => ({ ...current, lastSeenAt: !current.lastSeenAt || occurredAt > current.lastSeenAt ? occurredAt : current.lastSeenAt }))} />
+            <ContactQuickActions contact={contact} accounts={accounts} labels="always" onActivityLogged={(activity) => setProfile((current) => ({
+              ...current,
+              lastSeenAt: !current.lastSeenAt || activity.occurredAt > current.lastSeenAt ? activity.occurredAt : current.lastSeenAt,
+              activities: current.activities.some((item) => item.id === activity.id)
+                ? current.activities
+                : [activity, ...current.activities].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)),
+            }))} />
             {profile.instagramUrl ? <a href={profile.instagramUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-lg border border-[#cfd6e1] bg-white" aria-label={`Open ${contact.name} on Instagram`}><Instagram className="h-4 w-4" /></a> : null}
             {profile.linkedinUrl ? <a href={profile.linkedinUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-lg border border-[#cfd6e1] bg-white" aria-label={`Open ${contact.name} on LinkedIn`}><Linkedin className="h-4 w-4" /></a> : null}
             <button type="button" onClick={() => void saveToPhone()} className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#cfd6e1] bg-white px-3 text-sm font-semibold"><Download className="h-4 w-4" /> Save to phone</button>

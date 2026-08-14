@@ -43,7 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ con
     }
 
     if (payload.action === 'delete') {
-      await trashNotionContact(sourceId);
+      await trashNotionContact(sourceId, { allowAlreadyTrashed: true });
       await prisma.crmContactProfile.upsert({
         where: { orgId_notionContactPageId: { orgId: ctx.orgId, notionContactPageId: sourceId } },
         create: { orgId: ctx.orgId, notionContactPageId: sourceId, archivedAt: new Date() },

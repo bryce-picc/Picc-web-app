@@ -79,7 +79,7 @@ describe('contact lifecycle route permissions', () => {
     expect(response?.status).toBe(200);
     expect(update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'target-profile' },
-      data: expect.objectContaining({ favorite: true, frequencyDays: 30, instagramUrl: 'https://instagram.com/source' }),
+      data: expect.objectContaining({ favorite: true, frequencyDays: 30, instagramUrl: 'https://instagram.com/source', archivedAt: null }),
     }));
     expect(update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'source-profile' },

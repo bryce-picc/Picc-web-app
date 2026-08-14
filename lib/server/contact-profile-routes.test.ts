@@ -53,7 +53,6 @@ describe('contact profile routes', () => {
       lastSeenAt: '2026-08-14T16:00:00.000Z',
       instagramUrl: 'https://instagram.com/mara',
       linkedinUrl: 'https://linkedin.com/in/mara',
-      archived: false,
     }), { params: Promise.resolve({ contactId }) });
 
     expect(response?.status).toBe(200);
@@ -75,6 +74,17 @@ describe('contact profile routes', () => {
       create: expect.objectContaining({ favorite: true }),
       update: { favorite: true },
     }));
+  });
+
+  it('keeps archive state out of the general profile update endpoint', async () => {
+    const prisma = mocks();
+    const { PATCH } = await import('@/app/api/contacts/[contactId]/profile/route');
+    const response = await PATCH(request(`/api/contacts/${contactId}/profile`, 'PATCH', {
+      archived: true,
+    }), { params: Promise.resolve({ contactId }) });
+
+    expect(response?.status).toBe(400);
+    expect(prisma.crmContactProfile.upsert).not.toHaveBeenCalled();
   });
 
   it('logs only the honest external-app launch and updates last seen', async () => {

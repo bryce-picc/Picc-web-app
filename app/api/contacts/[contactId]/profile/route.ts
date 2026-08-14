@@ -10,8 +10,7 @@ const profileSchema = z.object({
   lastSeenAt: z.string().datetime().nullable().optional(),
   instagramUrl: z.string().trim().url().max(500).nullable().optional(),
   linkedinUrl: z.string().trim().url().max(500).nullable().optional(),
-  archived: z.boolean().optional(),
-}).refine((value) => Object.keys(value).length > 0, 'Choose at least one contact profile field');
+}).strict().refine((value) => Object.keys(value).length > 0, 'Choose at least one contact profile field');
 
 function profileData(payload: z.infer<typeof profileSchema>) {
   return {
@@ -20,7 +19,6 @@ function profileData(payload: z.infer<typeof profileSchema>) {
     ...(payload.lastSeenAt === undefined ? {} : { lastSeenAt: payload.lastSeenAt ? new Date(payload.lastSeenAt) : null }),
     ...(payload.instagramUrl === undefined ? {} : { instagramUrl: payload.instagramUrl }),
     ...(payload.linkedinUrl === undefined ? {} : { linkedinUrl: payload.linkedinUrl }),
-    ...(payload.archived === undefined ? {} : { archivedAt: payload.archived ? new Date() : null }),
   };
 }
 

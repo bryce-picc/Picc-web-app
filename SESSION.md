@@ -34,8 +34,9 @@
 
 ## Validation evidence
 
-- `npm run verify` passed after integrating current `main` and both review passes: lint, typecheck, 39 Vitest files / 182 tests, Prisma validation, and production build.
+- `npm run verify` passed after integrating current `main` and all review passes: lint, typecheck, 39 Vitest files / 183 tests, Prisma validation, and production build.
 - Full browser suite passed on an isolated port: `PICC_AGENT_DEV_PORT=3180 npx playwright test --workers=1` (29 tests).
+- Final focused contact browser suite passed on port 3181 (3 tests) after archive authorization and merge-target restoration changes.
 - Focused API/domain suite passed: 8 files / 38 tests.
 - Mobile browser proof covered favorite/profile editing, reminders through visible completion, save-to-phone vCard download, role-collision confirmation, and guarded maintenance dialogs.
 - Review regressions cover full Notion relation pagination, role-preserving merges and retries, stale collision invalidation, API-aligned role controls, load-safe partial profile updates, metadata consolidation, and recoverable cross-system merge retries.

@@ -72,7 +72,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ con
     const allowAlreadyTrashed = sourceProfile.mergedIntoPageId === merge.targetId;
     const mergedProfile = mergeContactProfileValues(sourceProfile, targetProfile);
     await prisma.$transaction([
-      prisma.crmContactProfile.update({ where: { id: targetProfile.id }, data: mergedProfile }),
+      prisma.crmContactProfile.update({ where: { id: targetProfile.id }, data: { ...mergedProfile, archivedAt: null } }),
       prisma.crmContactReminder.updateMany({ where: { orgId: ctx.orgId, profileId: sourceProfile.id }, data: { profileId: targetProfile.id } }),
       prisma.crmContactActivity.updateMany({ where: { orgId: ctx.orgId, profileId: sourceProfile.id }, data: { profileId: targetProfile.id } }),
       prisma.crmContactProfile.update({ where: { id: sourceProfile.id }, data: { mergedIntoPageId: merge.targetId } }),

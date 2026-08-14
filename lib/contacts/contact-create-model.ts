@@ -11,6 +11,7 @@ export type ContactCreateDraft = {
   position: string;
   email: string;
   phone: string;
+  roles: ContactRole[];
 };
 
 export type ContactCreateStatus = 'created_verified' | 'existing_verified' | 'partial_relation';
@@ -27,7 +28,7 @@ export function filterContactAccounts<T extends ContactAccountOption>(accounts: 
   );
 }
 
-export function buildContactCreatePayload(draft: ContactCreateDraft) {
+export function buildContactCreatePayload(draft: ContactCreateDraft, overwriteRoles = false) {
   const optional = (value: string) => value.trim() || null;
   return {
     accountPageId: draft.accountPageId.trim(),
@@ -35,6 +36,8 @@ export function buildContactCreatePayload(draft: ContactCreateDraft) {
     position: draft.position.trim(),
     email: optional(draft.email),
     phone: optional(draft.phone),
+    roles: draft.roles,
+    overwriteRoles,
   };
 }
 
@@ -47,3 +50,4 @@ export function contactCreateMessage(status: ContactCreateStatus) {
   }
   return 'The contact was saved, but we could not verify both relationship links yet.';
 }
+import type { ContactRole } from '@/lib/contacts/contact-profile';

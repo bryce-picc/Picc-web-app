@@ -3,7 +3,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { CheckCircle2, Loader2, Plus, RotateCw, Search, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   buildContactCreatePayload,
@@ -12,6 +12,7 @@ import {
   type ContactAccountOption,
   type ContactCreateStatus,
 } from '@/lib/contacts/contact-create-model';
+import { CONTACT_ROLE_OPTIONS, type ContactRole } from '@/lib/contacts/contact-profile';
 import { cn } from '@/lib/utils';
 
 type ContactResponse = {
@@ -20,12 +21,19 @@ type ContactResponse = {
   retry?: { accountPageId: string; contactPageId: string };
 };
 
+type RoleCollision = {
+  role: ContactRole;
+  label: string;
+  existingContacts: Array<{ id: string; name: string }>;
+};
+
 const emptyDraft = {
   accountPageId: '',
   name: '',
   position: '',
   email: '',
   phone: '',
+  roles: [] as ContactRole[],
 };
 
 export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { accounts: ContactAccountOption[]; triggerVariant?: 'default' | 'icon' }) {
@@ -42,6 +50,7 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ContactResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [roleCollisions, setRoleCollisions] = useState<RoleCollision[]>([]);
 
   useEffect(() => {
     if (requestedOpen) setOpen(true);
@@ -80,6 +89,7 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
     if (!nextOpen) {
       setResult(null);
       setError(null);
+      setRoleCollisions([]);
       setSubmitting(false);
       setDraft(emptyDraft);
       setAccountSearch('');
@@ -87,7 +97,7 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
     }
   }
 
-  async function submit(event: FormEvent) {
+  async function submit(event: { preventDefault(): void }, overwriteRoles = false) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -96,13 +106,21 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
       const response = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(buildContactCreatePayload(draft)),
+        body: JSON.stringify(buildContactCreatePayload(draft, overwriteRoles)),
       });
-      const payload = (await response.json().catch(() => ({}))) as ContactResponse & { error?: string };
+      const payload = (await response.json().catch(() => ({}))) as
+        | (ContactResponse & { error?: string })
+        | { status: 'role_collision'; contact: null; collisions: RoleCollision[]; error?: string };
+      if (response.status === 409 && payload.status === 'role_collision') {
+        setRoleCollisions(payload.collisions ?? []);
+        return;
+      }
       if (!response.ok && response.status !== 202) {
         throw new Error(payload.error || 'Contact could not be saved.');
       }
+      if (payload.status === 'role_collision') throw new Error('Contact roles need review before saving.');
       setResult(payload);
+      setRoleCollisions([]);
       toast[payload.status === 'partial_relation' ? 'warning' : 'success'](
         contactCreateMessage(payload.status),
       );
@@ -229,6 +247,46 @@ export function ContactCreateFlow({ accounts, triggerVariant = 'default' }: { ac
                 <ContactField label="Email" type="email" value={draft.email} onChange={(value) => setDraft((current) => ({ ...current, email: value }))} autoComplete="email" />
                 <ContactField label="Phone" type="tel" value={draft.phone} onChange={(value) => setDraft((current) => ({ ...current, phone: value }))} autoComplete="tel" />
               </div>
+
+              <fieldset>
+                <legend className="text-sm font-semibold text-[#263242]">Contact type</legend>
+                <p className="mt-1 text-xs leading-5 text-[#6a7483]">Select every CRM role this person fills.</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {CONTACT_ROLE_OPTIONS.map((role) => {
+                    const checked = draft.roles.includes(role.value);
+                    return (
+                      <label key={role.value} className={cn('flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm font-semibold transition', checked ? 'border-[#c93412] bg-[#fff2ee] text-[#8f260e]' : 'border-[#cfd6e1] bg-white text-[#344052] hover:bg-[#f3f6fa]')}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setDraft((current) => ({
+                            ...current,
+                            roles: checked ? current.roles.filter((value) => value !== role.value) : [...current.roles, role.value],
+                          }))}
+                          className="h-4 w-4 accent-[#c93412]"
+                        />
+                        {role.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              {roleCollisions.length > 0 ? (
+                <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                  <p className="font-semibold">These CRM roles already have a contact</p>
+                  <ul className="mt-2 space-y-1">
+                    {roleCollisions.map((collision) => (
+                      <li key={collision.role}>{collision.label}: {collision.existingContacts.map((contact) => contact.name).join(', ')}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 leading-5">Replacing them changes the live CRM. Nothing has been overwritten yet.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setRoleCollisions([])} className="min-h-10 rounded-lg border border-amber-300 bg-white px-3 font-semibold">Keep existing</button>
+                    <button type="button" disabled={submitting} onClick={(event) => void submit(event, true)} className="min-h-10 rounded-lg bg-[#9a3412] px-3 font-semibold text-white disabled:opacity-60">Replace and save</button>
+                  </div>
+                </div>
+              ) : null}
 
               {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p> : null}
               <div className="flex flex-col-reverse gap-2 border-t border-[#e0e5ed] pt-4 sm:flex-row sm:justify-end">

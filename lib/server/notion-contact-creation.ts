@@ -6,6 +6,7 @@ import type {
   CreateContactInput,
 } from '@/lib/server/contact-creation';
 import { normalizeContactName } from '@/lib/server/contact-creation';
+import { CONTACT_ROLE_OPTIONS, type ContactRole } from '@/lib/contacts/contact-profile';
 import { refreshLiveNotionContactsCache } from '@/lib/server/notion-live-crm';
 
 const NOTION_API_BASE = 'https://api.notion.com/v1';
@@ -121,6 +122,8 @@ export function createNotionContactCreationAdapter(): ContactCreationAdapter {
     return notionRequest<NotionPage>(`/pages/${accountPageId}`);
   }
 
+  const rolePropertyByValue = new Map(CONTACT_ROLE_OPTIONS.map((role) => [role.value, role.notionProperty]));
+
   return {
     async requireAccount(accountPageId) {
       const expectedSource = await resolveDataSource(requiredEnv('NOTION_MASTER_LIST_DATABASE_ID'));
@@ -207,6 +210,51 @@ export function createNotionContactCreationAdapter(): ContactCreationAdapter {
             },
           },
         }),
+      });
+    },
+
+    async getRoleAssignments(accountPageId, roles) {
+      const account = await getAccount(accountPageId);
+      const idsByRole = new Map<ContactRole, string[]>();
+      const allIds = new Set<string>();
+      for (const role of roles) {
+        const propertyName = rolePropertyByValue.get(role);
+        const ids = propertyName ? relationIds(account.properties?.[propertyName]) : [];
+        idsByRole.set(role, ids);
+        ids.forEach((id) => allIds.add(id));
+      }
+
+      const contacts = await Promise.all(
+        [...allIds].map(async (id) => {
+          const contact = mapContact(await notionRequest<NotionPage>(`/pages/${id}`));
+          return [normalizeId(id), { id: contact.id, name: contact.name }] as const;
+        }),
+      );
+      const contactById = new Map(contacts);
+
+      return Object.fromEntries(
+        [...idsByRole].map(([role, ids]) => [
+          role,
+          ids.flatMap((id) => {
+            const contact = contactById.get(normalizeId(id));
+            return contact ? [contact] : [];
+          }),
+        ]),
+      );
+    },
+
+    async assignRoles(accountPageId, contactPageId, roles) {
+      if (roles.length === 0) return;
+      const properties = Object.fromEntries(
+        roles.map((role) => {
+          const propertyName = rolePropertyByValue.get(role);
+          if (!propertyName) throw new Error('Unsupported contact role');
+          return [propertyName, { relation: [{ id: contactPageId }] }];
+        }),
+      );
+      await notionRequest(`/pages/${accountPageId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ properties }),
       });
     },
 

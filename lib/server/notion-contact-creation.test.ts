@@ -168,6 +168,42 @@ describe('Notion contact creation adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('reads occupied CRM role slots and resolves the current contact names', async () => {
+    const accountId = createInput().accountPageId;
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(() => jsonResponse({
+        id: accountId,
+        properties: {
+          'Primary Contact': { type: 'relation', relation: [{ id: 'existing-contact' }] },
+          'Billing Contact': { type: 'relation', relation: [] },
+        },
+      }))
+      .mockImplementationOnce(() => jsonResponse(contactPage('existing-contact')));
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = createNotionContactCreationAdapter();
+
+    await expect(adapter.getRoleAssignments?.(accountId, ['PRIMARY_CONTACT', 'BILLING_CONTACT'])).resolves.toEqual({
+      PRIMARY_CONTACT: [{ id: 'existing-contact', name: 'Maya Chen' }],
+      BILLING_CONTACT: [],
+    });
+  });
+
+  it('replaces only the explicitly selected CRM role slots', async () => {
+    const accountId = createInput().accountPageId;
+    const fetchMock = vi.fn().mockImplementationOnce(() => jsonResponse({ id: accountId }));
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = createNotionContactCreationAdapter();
+
+    await adapter.assignRoles?.(accountId, 'new-contact', ['PRIMARY_CONTACT', 'PPP_2']);
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.properties).toEqual({
+      'Primary Contact': { relation: [{ id: 'new-contact' }] },
+      'PPP #2': { relation: [{ id: 'new-contact' }] },
+    });
+  });
+
   it('requires both contact and account pages to contain the relationship', async () => {
     const accountId = createInput().accountPageId;
     const fetchMock = vi

@@ -54,10 +54,19 @@ function isoOrNull(value: Date | string | null | undefined) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-function lastSuccessfulSyncAt(metadata: CheckpointMetadata, updatedAt: Date, status: IntegrationSyncStatus) {
+export function resolveLastSuccessfulSyncAt(input: {
+  checkpointStatus: IntegrationSyncStatus | null | undefined;
+  checkpointMetadata: unknown;
+  checkpointUpdatedAt: Date | null | undefined;
+  latestSuccessfulRunFinishedAt: Date | null | undefined;
+}) {
+  const metadata = metadataObject(input.checkpointMetadata);
   const explicit = stringValue(metadata.lastSuccessfulSyncAt);
   if (explicit) return explicit;
-  return status === IntegrationSyncStatus.SUCCESS ? updatedAt.toISOString() : null;
+  if (input.checkpointStatus === IntegrationSyncStatus.SUCCESS && input.checkpointUpdatedAt) {
+    return input.checkpointUpdatedAt.toISOString();
+  }
+  return input.latestSuccessfulRunFinishedAt?.toISOString() ?? null;
 }
 
 export async function getNabisAdminSyncStatus(orgId: string) {
@@ -121,6 +130,28 @@ export async function getNabisAdminSyncStatus(orgId: string) {
     }),
   ]);
 
+  const successfulRuns = await prisma.syncRun.findMany({
+    where: {
+      orgId,
+      status: IntegrationSyncStatus.SUCCESS,
+      module: {
+        in: [...NABIS_STATUS_MODULES],
+      },
+    },
+    orderBy: { finishedAt: 'desc' },
+    take: 100,
+    select: {
+      module: true,
+      finishedAt: true,
+    },
+  });
+  const latestSuccessfulRunByModule = new Map<string, Date>();
+  for (const run of successfulRuns) {
+    if (run.finishedAt && !latestSuccessfulRunByModule.has(run.module)) {
+      latestSuccessfulRunByModule.set(run.module, run.finishedAt);
+    }
+  }
+
   const checkpoints = new Map((integration?.checkpoints ?? []).map((checkpoint) => [checkpoint.module as NabisStatusModule, checkpoint]));
   const modules = NABIS_STATUS_MODULES.map((module) => {
     const checkpoint = checkpoints.get(module);
@@ -129,7 +160,13 @@ export async function getNabisAdminSyncStatus(orgId: string) {
       module,
       status: checkpoint?.status ?? IntegrationSyncStatus.IDLE,
       updatedAt: checkpoint?.updatedAt.toISOString() ?? null,
-      lastSuccessfulSyncAt: checkpoint ? lastSuccessfulSyncAt(metadata, checkpoint.updatedAt, checkpoint.status) : null,
+      lastSuccessfulSyncAt: resolveLastSuccessfulSyncAt({
+        checkpointStatus: checkpoint?.status,
+        checkpointMetadata: checkpoint?.metadata,
+        checkpointUpdatedAt: checkpoint?.updatedAt,
+        latestSuccessfulRunFinishedAt: latestSuccessfulRunByModule.get(module),
+      }),
+      lastAttemptAt: checkpoint?.updatedAt.toISOString() ?? null,
       error: stringValue(metadata.error),
       rateLimited: metadata.rateLimited === true,
       retryAfterMs: numberValue(metadata.retryAfterMs),

@@ -16,6 +16,7 @@
 
 - Database, authentication, permissions, secrets, external integrations, and production-data changes.
 - Changes to `/Users/brycejohnson/Code/map-app`.
+- Unrelated Nabis exception workflows or application-shell refactors.
 
 ## Constraints
 
@@ -30,7 +31,7 @@
 - Checked open PRs #166, #144, #135, and #82 before source edits.
 - PR #166 is documentation-only. PR #135 has a stale, narrow overlap in Account Details; the implementation here is additive and will be rebased if #135 lands first.
 
-## Validation evidence
+## Validation plan
 
 - Baseline: 28 Vitest files and 134 tests passed under Node 22.22.0.
 - RED/GREEN: focused presentation and interaction contract tests cover compact sync summaries, Gmail/SMS/phone links, and follow-up request payloads.
@@ -40,6 +41,6 @@
 - `npm run test:e2e`: 25 browser tests passed under Node 22.22.0.
 - Final diff check: `git diff --check` passed.
 
-## Remaining verification boundary
+## Current state
 
 - Production UI proof follows merge and deployment.

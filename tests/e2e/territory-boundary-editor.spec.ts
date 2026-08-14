@@ -120,9 +120,50 @@ test('keeps Save Boundary above the fixed primary navigation at a short viewport
   const save = page.getByRole('button', { name: 'Save Boundary' });
   await page.getByRole('button', { name: 'Delete' }).last().focus();
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Finish Shape' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Clear' })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(save).toBeFocused();
   await save.press('Enter');
   await expect(page.getByText('Territory boundary updated')).toBeVisible();
+});
+
+test('keeps Finish Shape and Clear reachable while the mobile point list scrolls', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openPopulatedBoundaryEditor(page);
+
+  const scrollBody = page.getByTestId('territory-boundary-editor-scroll');
+  const finish = page.getByRole('button', { name: 'Finish Shape' });
+  const clear = page.getByRole('button', { name: 'Clear' });
+  const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
+  const initialFinishBox = await finish.boundingBox();
+  const initialClearBox = await clear.boundingBox();
+
+  expect(initialFinishBox).not.toBeNull();
+  expect(initialClearBox).not.toBeNull();
+  await scrollBody.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+
+  await expect(finish).toBeVisible();
+  await expect(clear).toBeVisible();
+  const [scrolledFinishBox, scrolledClearBox, navigationBox] = await Promise.all([
+    finish.boundingBox(),
+    clear.boundingBox(),
+    navigation.boundingBox(),
+  ]);
+  expect(scrolledFinishBox).not.toBeNull();
+  expect(scrolledClearBox).not.toBeNull();
+  expect(navigationBox).not.toBeNull();
+  expect(scrolledFinishBox!.y).toBe(initialFinishBox!.y);
+  expect(scrolledClearBox!.y).toBe(initialClearBox!.y);
+  expect(scrolledFinishBox!.y + scrolledFinishBox!.height).toBeLessThanOrEqual(navigationBox!.y);
+  expect(scrolledClearBox!.y + scrolledClearBox!.height).toBeLessThanOrEqual(navigationBox!.y);
+
+  await finish.click();
+  await clear.click();
+  await expect(page.getByText('0 points captured')).toBeVisible();
 });
 
 for (const viewport of [

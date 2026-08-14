@@ -362,19 +362,6 @@ export function TerritoryBoundaryEditor({
               <Undo2 className="h-4 w-4" />
               Undo Point
             </button>
-            <button
-              type="button"
-              onClick={onFinishDrawing}
-              disabled={boundary.coordinates.length < 3}
-              className="inline-flex items-center gap-1 rounded-lg border border-[#9fd3aa] bg-[#effaf1] px-3 py-2 text-[13px] font-medium text-[#24703a] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Check className="h-4 w-4" />
-              Finish Shape
-            </button>
-            <button type="button" onClick={onClearPoints} className="inline-flex items-center gap-1 rounded-lg border border-[#e2b4ab] bg-[#fff4f1] px-3 py-2 text-[13px] font-medium text-[#b43819]">
-              <Trash2 className="h-4 w-4" />
-              Clear
-            </button>
               </div>
 
               {boundary.coordinates.length > 0 ? (
@@ -406,14 +393,36 @@ export function TerritoryBoundaryEditor({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-[#f0d6ce] px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[12px] text-[#7b7e87]">{boundary.coordinates.length} point{boundary.coordinates.length === 1 ? '' : 's'} captured</p>
+        <div
+          className="shrink-0 border-t border-[#f0d6ce] px-3 py-3 [@media(max-height:500px)]:flex [@media(max-height:500px)]:items-center [@media(max-height:500px)]:gap-2 [@media(max-height:500px)]:py-2"
+          data-testid="territory-boundary-editor-footer"
+        >
+          <div className="mb-2 grid grid-cols-2 gap-2 [@media(max-height:500px)]:mb-0 [@media(max-height:500px)]:min-w-0 [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
+            <button
+              type="button"
+              onClick={onFinishDrawing}
+              disabled={boundary.coordinates.length < 3}
+              className="inline-flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-[#9fd3aa] bg-[#effaf1] px-3 py-2 text-[13px] font-medium text-[#24703a] disabled:cursor-not-allowed disabled:opacity-50 [@media(max-height:500px)]:min-h-10 [@media(max-height:500px)]:px-2 [@media(max-height:500px)]:text-[12px]"
+            >
+              <Check className="h-4 w-4" />
+              Finish Shape
+            </button>
+            <button
+              type="button"
+              onClick={onClearPoints}
+              className="inline-flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-[#e2b4ab] bg-[#fff4f1] px-3 py-2 text-[13px] font-medium text-[#b43819] [@media(max-height:500px)]:min-h-10 [@media(max-height:500px)]:px-2 [@media(max-height:500px)]:text-[12px]"
+            >
+              <Trash2 className="h-4 w-4" />
+              Clear
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-3 [@media(max-height:500px)]:shrink-0">
+            <p className="text-[12px] text-[#7b7e87] [@media(max-height:500px)]:hidden">{boundary.coordinates.length} point{boundary.coordinates.length === 1 ? '' : 's'} captured</p>
             <button
               type="button"
               onClick={onSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#cd3814] px-4 py-2 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-[#cd3814] px-4 py-2 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 [@media(max-height:500px)]:min-h-10 [@media(max-height:500px)]:px-3 [@media(max-height:500px)]:text-[12px]"
             >
               <Save className="h-4 w-4" />
               {saving ? 'Saving...' : 'Save Boundary'}

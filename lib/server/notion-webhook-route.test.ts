@@ -1,6 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 
+const { enqueueTerritoryStoreSync, syncTerritoryCheckInMirrorByPageId } = vi.hoisted(() => ({
+  enqueueTerritoryStoreSync: vi.fn().mockResolvedValue({ queued: true }),
+  syncTerritoryCheckInMirrorByPageId: vi.fn().mockResolvedValue({ synced: true }),
+}));
+
+vi.mock('@/lib/server/notion-territory', () => ({
+  enqueueTerritoryStoreSync,
+  syncTerritoryCheckInMirrorByPageId,
+}));
+
+import { POST } from '../../app/api/webhooks/notion/route';
+
 type LoadedRoute = {
   POST: (request: Request) => Promise<Response>;
   enqueueTerritoryStoreSync: ReturnType<typeof vi.fn>;
@@ -17,20 +29,8 @@ function setProductionWebhookEnv(secret?: string) {
 }
 
 async function loadRoute(): Promise<LoadedRoute> {
-  vi.resetModules();
-
-  const enqueueTerritoryStoreSync = vi.fn().mockResolvedValue({ queued: true });
-  const syncTerritoryCheckInMirrorByPageId = vi.fn().mockResolvedValue({ synced: true });
-
-  vi.doMock('@/lib/server/notion-territory', () => ({
-    enqueueTerritoryStoreSync,
-    syncTerritoryCheckInMirrorByPageId,
-  }));
-
-  const route = await import('../../app/api/webhooks/notion/route');
-
   return {
-    POST: route.POST,
+    POST,
     enqueueTerritoryStoreSync,
     syncTerritoryCheckInMirrorByPageId,
   };
@@ -56,7 +56,8 @@ function signedHeaders(rawBody: string, secret: string) {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
-  vi.doUnmock('@/lib/server/notion-territory');
+  enqueueTerritoryStoreSync.mockClear();
+  syncTerritoryCheckInMirrorByPageId.mockClear();
 });
 
 describe('Notion webhook route', () => {

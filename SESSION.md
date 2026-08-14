@@ -1,46 +1,44 @@
-# Session: Issue 163 Mobile CRM UI Foundation
+# Session: Issue 171 Territory Drawing Action Clearance
 
 ## Linked work
 
-- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
-- Branch: `codex/163-contact-foundation`
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/167
+- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/171
+- Draft PR: pending
+- Branch: `codex/171-territory-drawing-actions`
+- Worktree: `/Users/brycejohnson/Code/PICC-Web-App`
 
 ## Scope
 
-- Improve reusable mobile CRM status and navigation components.
-- Improve readability and interaction consistency across related CRM views.
-- Add focused regression coverage for the changed user flows.
+- Keep `Finish Shape` and `Clear` fully visible and tappable above fixed mobile actions.
+- Preserve the existing `Save Boundary` clearance from the primary bottom navigation.
+- Add a phone-sized Playwright regression covering visibility, geometry, and interaction.
 
 ## Out of scope
 
-- Database, authentication, permissions, secrets, external integrations, and production-data changes.
+- Territory geometry, persistence, permissions, or API changes.
+- Primary map navigation redesign.
 - Changes to `/Users/brycejohnson/Code/map-app`.
-- Unrelated Nabis exception workflows or application-shell refactors.
 
 ## Constraints
 
-- Preserve the current PWA shell and server boundaries.
-- Use RED-first tests for behavior changes.
-- Run `npm run verify` and `npm run test:e2e`.
-- Capture mobile browser proof for changed UI flows.
+- Reproduce the clipping with a RED browser test before changing the component.
+- Keep the fix localized to the existing mobile territory boundary sheet.
+- Preserve portrait, landscape, keyboard, and desktop behavior.
+- Run `npm run verify`, the focused territory E2E spec, and the full E2E suite before completion.
 
 ## Ownership and overlap
 
-- Owned paths: shared CRM presentation components, affected mobile CRM views, focused tests, `SESSION.md`, and UI evidence.
-- Checked open PRs #166, #144, #135, and #82 before source edits.
-- PR #166 is documentation-only. PR #135 has a stale, narrow overlap in Account Details; the implementation here is additive and will be rebased if #135 lands first.
+- Owned paths: `components/mobile/territory-boundary-sheet.tsx`, `tests/e2e/territory-boundary-editor.spec.ts`, browser proof artifacts, and `SESSION.md`.
+- Open PRs were checked; none owns the territory boundary sheet or its E2E spec.
+- The unrelated untracked `.agents/account-detail-redirect-ai-tab.png` is not part of this work.
 
 ## Validation plan
 
-- Baseline: 28 Vitest files and 134 tests passed under Node 22.22.0.
-- RED/GREEN: focused presentation and interaction contract tests cover compact sync summaries, Gmail/SMS/phone links, and follow-up request payloads.
-- Targeted mobile Playwright: 2 tests passed for dense account cards, alphabet-rail clearance, New Follow-Up, direct Account Details contact actions, and the post-action prompt.
-- Browser evidence: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/accounts-mobile-contact-foundation.png` and `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/account-contact-actions-follow-up.png`.
-- `npm run verify`: passed (lint, typecheck, 31 Vitest files / 141 tests, Prisma validation, production build).
-- `npm run test:e2e`: 25 browser tests passed under Node 22.22.0.
-- Final diff check: `git diff --check` passed.
+- RED: at 390x844, assert `Finish Shape` and `Clear` do not extend under the fixed Save footer and can receive pointer clicks.
+- GREEN: run the focused territory boundary editor Playwright spec.
+- Regression: run repository verification and the full Playwright suite.
+- Visual: capture the corrected phone viewport with the drawing actions visible above bottom UI.
 
 ## Current state
 
-- Production UI proof follows merge and deployment.
+Issue and branch created. Regression test is next; production component code has not been changed.

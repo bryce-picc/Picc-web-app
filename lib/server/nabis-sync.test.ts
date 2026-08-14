@@ -10,8 +10,30 @@ import {
   pageIsOlderThanCutoff,
   parseNabisOrderForCache,
   parseNabisOrderLineForCache,
+  runNabisSalesFirstSync,
   staleNabisRetailerIdsMissingFromFeed,
 } from '@/lib/server/nabis-sync';
+
+describe('Nabis combined sync sequencing', () => {
+  it('commits order ingestion before retailer CRM work can fail', async () => {
+    const events: string[] = [];
+
+    await expect(
+      runNabisSalesFirstSync({
+        syncOrders: async () => {
+          events.push('orders');
+          return { orders: 12 };
+        },
+        syncRetailers: async () => {
+          events.push('retailers');
+          throw new Error('CRM unavailable');
+        },
+      }),
+    ).rejects.toThrow('CRM unavailable');
+
+    expect(events).toEqual(['orders', 'retailers']);
+  });
+});
 
 describe('Nabis sync line cache parsing', () => {
   it('stores promo-adjusted order totals for NY V2 orders with discounts', () => {

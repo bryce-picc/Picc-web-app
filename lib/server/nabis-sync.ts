@@ -7,6 +7,8 @@ import { ensureAccountIdentityMappings, resolveCanonicalAccountByIdentifiers } f
 import { appendAuditEvent } from '@/lib/server/audit-log';
 import { ensureDispensaryCrmPageFromRetailer } from '@/lib/server/notion-crm-sync';
 import { ensureActivePolicySnapshot } from '@/lib/server/policy-snapshots';
+import { assessNabisIdentityLink, persistNabisIdentityConflict } from '@/lib/server/nabis-identity-conflicts';
+import { resolveLastSuccessfulSyncAt } from '@/lib/server/nabis-sync-status';
 import { excludedInternalTransferRetailers, isExcludedInternalTransferRetailerName } from '@/lib/nabis/internal-transfers';
 
 const DEFAULT_API_BASE_URL = 'https://platform-api.nabis.pro';
@@ -223,6 +225,14 @@ function requiredApiKey() {
     throw new Error('NABIS_API_KEY is required');
   }
   return apiKey;
+}
+
+function identityConflictRecipientKey(actor?: SyncActor) {
+  if (actor?.clerkUserId?.trim()) {
+    return actor.clerkUserId.trim();
+  }
+  const adminEmail = process.env.PICC_ADMIN_EMAIL?.trim().toLowerCase() || 'bryce@piccplatform.com';
+  return `email:${adminEmail}`;
 }
 
 function getApiBaseUrl() {
@@ -1239,26 +1249,64 @@ async function upsertLocalAccountFromRetailer(
       notionPageId: account.notionPageId,
     });
     notionPageId = notion.pageId;
-
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
+    const currentOwner = await prisma.account.findFirst({
+      where: {
+        orgId,
         notionPageId,
       },
-    });
-
-    await appendAuditEvent({
-      orgId,
-      action: notion.created ? 'CRM_ACCOUNT_CREATED_FROM_NABIS' : 'CRM_ACCOUNT_LINKED_FROM_NABIS',
-      entityType: 'Account',
-      entityId: account.id,
-      actorClerkUserId: actor?.clerkUserId ?? null,
-      actorEmail: actor?.email ?? null,
-      metadata: {
-        licensedLocationId: retailer.licensedLocationId,
-        notionPageId,
+      select: {
+        id: true,
+        name: true,
       },
     });
+    const linkDecision = assessNabisIdentityLink({
+      reviewRequired: notion.reviewRequired === true,
+      incomingAccountId: account.id,
+      ownerAccountId: currentOwner?.id ?? null,
+    });
+
+    if (linkDecision === 'REVIEW') {
+      notionPageId = account.notionPageId;
+      try {
+        await persistNabisIdentityConflict({
+          orgId,
+          recipientKey: identityConflictRecipientKey(actor),
+          incomingAccountId: account.id,
+          incomingAccountName: account.name,
+          candidatePageId: notion.pageId,
+          currentOwnerAccountId: currentOwner?.id ?? null,
+          currentOwnerAccountName: currentOwner?.name ?? null,
+          reason: notion.reviewReason ?? 'page_owned_by_another_account',
+          sourceIdentifiers: {
+            licensedLocationId: retailer.licensedLocationId,
+            nabisRetailerId: retailer.externalRetailerId,
+            licenseNumber: retailer.licenseNumber,
+          },
+        });
+      } catch (error) {
+        console.error('[picc-nabis-identity-review]', error);
+      }
+    } else {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: {
+          notionPageId,
+        },
+      });
+
+      await appendAuditEvent({
+        orgId,
+        action: notion.created ? 'CRM_ACCOUNT_CREATED_FROM_NABIS' : 'CRM_ACCOUNT_LINKED_FROM_NABIS',
+        entityType: 'Account',
+        entityId: account.id,
+        actorClerkUserId: actor?.clerkUserId ?? null,
+        actorEmail: actor?.email ?? null,
+        metadata: {
+          licensedLocationId: retailer.licensedLocationId,
+          notionPageId,
+        },
+      });
+    }
   }
 
   await ensureAccountIdentityMappings({
@@ -1889,6 +1937,15 @@ async function syncNabisOrdersCore(orgId: string, integrationId: string, actor?:
   });
 }
 
+export async function runNabisSalesFirstSync<TOrders, TRetailers>(input: {
+  syncOrders: () => Promise<TOrders>;
+  syncRetailers: () => Promise<TRetailers>;
+}) {
+  const orders = await input.syncOrders();
+  const retailers = await input.syncRetailers();
+  return { orders, retailers };
+}
+
 export async function syncNabisRetailersAndOrders(orgId: string, actor?: SyncActor, options?: OrderSyncOptions & { syncCrm?: boolean }) {
   await ensureActivePolicySnapshot(orgId, actor);
   const integration = await ensureNabisIntegration(orgId);
@@ -1896,13 +1953,10 @@ export async function syncNabisRetailersAndOrders(orgId: string, actor?: SyncAct
   return withNabisSyncLease(
     { orgId, integrationId: integration.id, module: options?.historicalBackfill ? 'retailers_and_orders_historical_backfill' : options?.reconciliation ? 'retailers_and_orders_reconcile' : 'retailers_and_orders', actor },
     async () => {
-      const retailerResult = await syncNabisRetailersCore(orgId, integration.id, actor, { syncCrm: options?.syncCrm === true });
-      const orderResult = await syncNabisOrdersCore(orgId, integration.id, actor, options);
-
-      return {
-        retailers: retailerResult,
-        orders: orderResult,
-      };
+      return runNabisSalesFirstSync({
+        syncOrders: () => syncNabisOrdersCore(orgId, integration.id, actor, options),
+        syncRetailers: () => syncNabisRetailersCore(orgId, integration.id, actor, { syncCrm: options?.syncCrm === true }),
+      });
     },
   );
 }
@@ -1929,6 +1983,18 @@ export async function getNabisSyncFreshness(orgId: string) {
           updatedAt: true,
         },
       },
+      syncRuns: {
+        where: {
+          status: IntegrationSyncStatus.SUCCESS,
+          module: { in: ['retailers', 'orders', 'orders_reconcile'] },
+        },
+        orderBy: { finishedAt: 'desc' },
+        take: 30,
+        select: {
+          module: true,
+          finishedAt: true,
+        },
+      },
     },
   });
 
@@ -1938,25 +2004,37 @@ export async function getNabisSyncFreshness(orgId: string) {
   const orderCheckpoint = byModule.get('orders');
   const reconcileCheckpoint = byModule.get('orders_reconcile');
   const leaseCheckpoint = byModule.get(NABIS_SYNC_LEASE_MODULE);
+  const latestSuccessfulRunByModule = new Map<string, Date>();
+  for (const run of integration?.syncRuns ?? []) {
+    if (run.finishedAt && !latestSuccessfulRunByModule.has(run.module)) {
+      latestSuccessfulRunByModule.set(run.module, run.finishedAt);
+    }
+  }
 
-  const orderSyncAt =
-    ((orderCheckpoint?.metadata as Record<string, unknown> | null)?.lastSuccessfulSyncAt as string | undefined) ??
-    orderCheckpoint?.updatedAt.toISOString() ??
-    null;
-  const retailerSyncAt =
-    ((retailerCheckpoint?.metadata as Record<string, unknown> | null)?.lastSuccessfulSyncAt as string | undefined) ??
-    retailerCheckpoint?.updatedAt.toISOString() ??
-    null;
+  const orderSyncAt = resolveLastSuccessfulSyncAt({
+    checkpointStatus: orderCheckpoint?.status,
+    checkpointMetadata: orderCheckpoint?.metadata,
+    checkpointUpdatedAt: orderCheckpoint?.updatedAt,
+    latestSuccessfulRunFinishedAt: latestSuccessfulRunByModule.get('orders'),
+  });
+  const retailerSyncAt = resolveLastSuccessfulSyncAt({
+    checkpointStatus: retailerCheckpoint?.status,
+    checkpointMetadata: retailerCheckpoint?.metadata,
+    checkpointUpdatedAt: retailerCheckpoint?.updatedAt,
+    latestSuccessfulRunFinishedAt: latestSuccessfulRunByModule.get('retailers'),
+  });
 
   return {
     integrationStatus: integration?.status ?? IntegrationSyncStatus.IDLE,
     lastSyncAt: integration?.lastSyncedAt?.toISOString() ?? null,
     lastOrderSyncAt: orderSyncAt,
     lastRetailerSyncAt: retailerSyncAt,
-    lastReconciliationAt:
-      ((reconcileCheckpoint?.metadata as Record<string, unknown> | null)?.lastSuccessfulSyncAt as string | undefined) ??
-      reconcileCheckpoint?.updatedAt.toISOString() ??
-      null,
+    lastReconciliationAt: resolveLastSuccessfulSyncAt({
+      checkpointStatus: reconcileCheckpoint?.status,
+      checkpointMetadata: reconcileCheckpoint?.metadata,
+      checkpointUpdatedAt: reconcileCheckpoint?.updatedAt,
+      latestSuccessfulRunFinishedAt: latestSuccessfulRunByModule.get('orders_reconcile'),
+    }),
     activeSync: activeNabisSyncFromLease({
       status: leaseCheckpoint?.status,
       metadata: leaseCheckpoint?.metadata,

@@ -1,50 +1,52 @@
-# Session: Issue 161 Territory Save Clearance
+# Session: Issue 164 Nabis Identity Review Continuity
 
 ## Linked work
 
-- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/161
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/162
-- Branch: `codex/161-territory-save-clearance`
+- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/164
+- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/165
+- Branch: `codex/164-nabis-identity-review`
+- Worktree: `/Users/brycejohnson/Code/PICC-Web-App-worktrees/issue-164-nabis-identity-review`
 
 ## Scope
 
-- Keep the territory boundary editor fully above the fixed bottom navigation.
-- Keep the editor body independently scrollable when its point list exceeds the available height.
-- Keep the `Save Boundary` footer visible, keyboard reachable, and clickable at short desktop and mobile viewports.
-- Add focused regression coverage for the reported overlap.
+- Preserve canonical Notion page ownership when Nabis identity matching is ambiguous.
+- Keep recent order ingestion independent from optional CRM mirroring failures.
+- Create deduplicated, auditable identity-review notifications.
+- Email the configured administrator once per newly opened conflict.
+- Add complete Settings UI for recipient configuration, open/resolved review items, and explicit resolution.
+- Correct last-success and failed-attempt status semantics.
 
 ## Out of scope
 
-- Boundary persistence, API, database, schema, authentication, authorization, or production-data changes.
-- Map-provider, map-control, or primary-navigation redesign.
+- Fuzzy automatic account merges.
+- Destructive Account or Notion page deletion.
+- Unreviewed production data repair.
 - Changes to `/Users/brycejohnson/Code/map-app`.
+- Unrelated Nabis exception workflows or application-shell refactors.
 
 ## Constraints
 
-- Reuse the existing `--picc-bottom-nav-clearance` design token.
-- Preserve the current Google Maps boundary editing workflow and fixed primary navigation.
-- Use a failing browser behavior test before implementation.
-- Run `npm run verify` and `npm run test:e2e` before completion.
-- Capture desktop and mobile user-visible evidence.
+- Use RED-first tests for every behavior change.
+- Keep Notion and email behind server adapters.
+- Reuse existing notification, preference, identity, and audit models unless tests prove a schema addition unavoidable.
+- All configuration and resolution actions must be usable from the authenticated browser UI.
+- Production email-provider or environment changes require approval-lane confirmation on PR #165.
+- Run `npm run verify` and browser E2E before completion.
 
 ## Ownership and overlap
 
-- Owned paths: `components/mobile/territory-boundary-sheet.tsx`, focused territory editor tests, `SESSION.md`, and UI evidence.
-- Open PRs #160, #144, #135, and #82 were checked.
-- PR #160 owns subway/map-overlay paths but does not own the boundary sheet.
-- PRs #135 and #82 do not overlap.
-- PR #144 is a stale broad monorepo migration that conflicts with the canonical architecture and declares no owned paths.
+- Owned paths: `lib/server/nabis-sync*`, `lib/server/notion-crm-sync*`, identity-conflict and email modules, `app/api/settings/nabis-*/**`, `components/settings/nabis-sync-admin-panel.tsx`, focused tests, `docs/superpowers/**`, and `SESSION.md`.
+- PR #135 was checked; this branch avoids its separate account-detail email workflow.
+- PR #144 was checked; this work follows the canonical current root-app architecture.
+- The branch is `parallel:exclusive` because sync sequencing and identity ownership are shared production behavior.
 
-## Validation evidence
+## Validation plan
 
-- RED: at 1440x800, the primary navigation began at y=704 while `Save Boundary` ended at y=821.5.
-- GREEN: the focused Playwright suite passed all four checks covering real internal scroll movement with a stationary footer, tab-order keyboard save, mobile portrait, mobile landscape with at least a 44px usable form body, short desktop, and the reported 1800x1280 viewport.
-- `npm run verify`: passed lint, typecheck, 27 Vitest files with 126 tests, Prisma validation, and the Next.js production build.
-- `npm run test:e2e`: 22 Playwright tests passed.
-- Read-only review found the initial landscape test allowed a collapsed scroll body; the strengthened test failed at 0px, the height-aware inset was corrected, and the focused four-viewport suite passed again.
-- Desktop screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-desktop.png`.
-- Mobile screenshot: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ff906-4d75-7e53-80d1-bceaf818dc46/territory-save-mobile.png`.
+- Unit/domain: collision handling, exact matches, deduplication, email idempotency, order continuity, last-success semantics, resolution transaction.
+- API/component: authorization, validation, preference persistence, loading/error/empty/open/resolved states.
+- Browser: configure recipient, inspect a deterministic intercepted conflict, resolve it, and verify status/readback without creating production test data.
+- Static/full: `npm run verify` and `npm run test:e2e`.
 
-## Remaining verification boundary
+## Current state
 
-The local UI uses intercepted read and save responses and does not mutate production data. Production proof remains pending merge and deployment.
+Design approved in chat. Written specification is pending user review; implementation has not started.

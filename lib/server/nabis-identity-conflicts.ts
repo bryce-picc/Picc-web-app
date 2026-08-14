@@ -1,8 +1,9 @@
 import 'server-only';
 
 import { createHash } from 'node:crypto';
-import { Prisma } from '@prisma/client';
+import { NotificationCategory, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { sendTransactionalEmail, type TransactionalEmailResult } from '@/lib/server/transactional-email';
 
 export type NabisIdentityReviewReason =
   | 'nabis_retailer_id_conflict'
@@ -76,6 +77,19 @@ type IdentityConflictRepository = {
   create: (notification: IdentityConflictNotificationDraft) => Promise<IdentityConflictNotification>;
   update: (id: string, notification: IdentityConflictNotificationDraft) => Promise<IdentityConflictNotification>;
   onOpened?: (notification: IdentityConflictNotification) => Promise<void>;
+  now?: () => Date;
+};
+
+type ConflictEmailDependencies = {
+  resolveRecipient: () => Promise<{ email: string; enabled: boolean }>;
+  send: (message: {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+    idempotencyKey: string;
+  }) => Promise<TransactionalEmailResult>;
+  update: (notification: IdentityConflictNotification) => Promise<void>;
   now?: () => Date;
 };
 
@@ -181,6 +195,74 @@ export async function recordNabisIdentityConflict(input: NabisIdentityConflictIn
   return { notification, created: true };
 }
 
+function escapeHtml(value: string) {
+  return value.replace(/[&<>'"]/g, (character) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;',
+    };
+    return entities[character] ?? character;
+  });
+}
+
+export async function deliverNabisIdentityConflictEmail(
+  notification: IdentityConflictNotification,
+  dependencies: ConflictEmailDependencies,
+) {
+  const recipient = await dependencies.resolveRecipient();
+  const attemptedAt = (dependencies.now ?? (() => new Date()))().toISOString();
+
+  if (!recipient.enabled) {
+    await dependencies.update({
+      ...notification,
+      metadata: {
+        ...notification.metadata,
+        email: {
+          status: 'UNAVAILABLE',
+          providerMessageId: null,
+          error: 'Email alerts are disabled.',
+          attemptedAt,
+        },
+      },
+    });
+    return;
+  }
+
+  const settingsUrl = `${process.env.PICC_APP_BASE_URL?.trim() || 'https://piccnewyork.org'}/settings#nabis-identity-review`;
+  const incomingName = notification.metadata.incomingAccountName;
+  const currentName = notification.metadata.currentOwnerAccountName ?? 'an existing CRM record';
+  const subject = `PICC identity review: ${incomingName}`;
+  const text = [
+    `${incomingName} needs identity review against ${currentName}.`,
+    'Sales ingestion continued; no ambiguous ownership change was made.',
+    `Review and resolve: ${settingsUrl}`,
+  ].join('\n\n');
+  const html = `<p><strong>${escapeHtml(incomingName)}</strong> needs identity review against ${escapeHtml(currentName)}.</p><p>Sales ingestion continued; no ambiguous ownership change was made.</p><p><a href="${escapeHtml(settingsUrl)}">Review and resolve in PICC Settings</a></p>`;
+  const result = await dependencies.send({
+    to: recipient.email,
+    subject,
+    text,
+    html,
+    idempotencyKey: `nabis-identity-review-${notification.id}`,
+  });
+
+  await dependencies.update({
+    ...notification,
+    metadata: {
+      ...notification.metadata,
+      email: {
+        status: result.status,
+        providerMessageId: result.providerMessageId,
+        error: result.error,
+        attemptedAt,
+      },
+    },
+  });
+}
+
 function parseConflictMetadata(value: Prisma.JsonValue): NabisIdentityConflictMetadata | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
@@ -222,13 +304,59 @@ export async function listNabisIdentityConflicts(orgId: string) {
   return rows.map(fromPrismaNotification).filter((row): row is IdentityConflictNotification => Boolean(row));
 }
 
+export async function resolveNabisIdentityConflictRecipient(orgId: string) {
+  const preference = await prisma.notificationPreference.findFirst({
+    where: {
+      orgId,
+      category: NotificationCategory.EXCEPTIONS,
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+  const email = preference?.email?.trim().toLowerCase() || process.env.PICC_ADMIN_EMAIL?.trim().toLowerCase() || 'bryce@piccplatform.com';
+  const session = preference?.clerkUserId
+    ? null
+    : await prisma.appSessionAudit.findFirst({
+        where: {
+          orgId,
+          email: {
+            equals: email,
+            mode: 'insensitive',
+          },
+        },
+        orderBy: { lastSeenAt: 'desc' },
+        select: { clerkUserId: true },
+      });
+
+  return {
+    email,
+    emailEnabled: preference?.emailEnabled ?? true,
+    inAppEnabled: preference?.inAppEnabled ?? true,
+    clerkUserId: preference?.clerkUserId ?? session?.clerkUserId ?? null,
+    recipientKey: preference?.clerkUserId ?? session?.clerkUserId ?? `email:${email}`,
+  };
+}
+
+async function updateConflictEmailState(notification: IdentityConflictNotification) {
+  await prisma.notification.update({
+    where: { id: notification.id },
+    data: {
+      metadata: notification.metadata as unknown as Prisma.InputJsonValue,
+    },
+  });
+}
+
 export async function persistNabisIdentityConflict(
   input: NabisIdentityConflictInput,
   options?: { onOpened?: (notification: IdentityConflictNotification) => Promise<void> },
 ) {
-  return recordNabisIdentityConflict(input, {
+  const recipient = await resolveNabisIdentityConflictRecipient(input.orgId);
+  const normalizedInput = {
+    ...input,
+    recipientKey: recipient.recipientKey,
+  };
+  return recordNabisIdentityConflict(normalizedInput, {
     findOpenByKey: async (conflictKey) => {
-      const conflicts = await listNabisIdentityConflicts(input.orgId);
+      const conflicts = await listNabisIdentityConflicts(normalizedInput.orgId);
       return conflicts.find((conflict) => conflict.metadata.status === 'OPEN' && conflict.metadata.conflictKey === conflictKey) ?? null;
     },
     create: async (notification) => {
@@ -259,6 +387,14 @@ export async function persistNabisIdentityConflict(
       if (!mapped) throw new Error('Updated identity conflict could not be read back.');
       return mapped;
     },
-    onOpened: options?.onOpened,
+    onOpened:
+      options?.onOpened ??
+      (async (notification) => {
+        await deliverNabisIdentityConflictEmail(notification, {
+          resolveRecipient: async () => ({ email: recipient.email, enabled: recipient.emailEnabled }),
+          send: sendTransactionalEmail,
+          update: updateConflictEmailState,
+        });
+      }),
   });
 }

@@ -4,7 +4,7 @@
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
 - Branch: `codex/163-contact-profiles`
-- Base branch: `codex/163-contact-foundation`
+- Base branch: `main` after the approved foundation release merged.
 - Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/168
 
 ## Scope
@@ -29,8 +29,8 @@
 ## Ownership and overlap
 
 - Owned paths: focused mobile CRM UI and domain/server boundaries, tests, `SESSION.md`, and UI evidence.
-- Stacked on draft PR #167 for the shared action foundation.
-- Checked open PRs #167, #166, #144, #135, and #82 before source edits. This slice is intentionally stacked on #167; the remaining PRs do not actively own the focused paths or are stale/documentation-only.
+- Stacked on merged PR #167 for the shared action foundation.
+- Checked open PRs #167, #166, #144, #135, and #82 before source edits. The remaining PRs do not actively own the focused paths or are stale/documentation-only.
 
 ## Validation evidence
 
@@ -44,4 +44,4 @@
 ## Remaining verification boundary
 
 - Production UI proof follows merge and deployment.
-- Schema migration and user-triggered live CRM maintenance remain approval-lane operations; the draft PR must not merge without the required approval comment response.
+- Schema migration and user-triggered live CRM maintenance were approved before merge.

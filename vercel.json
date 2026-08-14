@@ -10,10 +10,6 @@
     {
       "path": "/api/cron/notion-sync",
       "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/daily-briefing",
-      "schedule": "0 * * * *"
     }
   ]
 }

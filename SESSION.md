@@ -25,7 +25,7 @@
 
 - Keep ranking and briefing selection deterministic and testable; no LLM dependency.
 - Scope preferences, reminders, mailbox activity, and delivery to the authenticated user and tenant.
-- Use an authenticated cron route, an hourly GitHub Actions trigger, per-user local send time, delivery idempotency, and the existing email adapter.
+- Use an authenticated cron route, an hourly GitHub Actions trigger, per-user local send time, delivery idempotency, and the existing email adapter; GitHub Actions supplies the wake-up because the current Vercel plan rejects hourly Cron schedules.
 - Never invent unavailable account metrics; expose only computed values from existing read models.
 
 ## Validation
@@ -46,3 +46,5 @@
 
 - The scoped migration, cron secret, and outbound email configuration were approved for release.
 - Production delivery proof depends on the required provider and scheduler secrets being configured.
+- The first Vercel preview rejected the hourly `vercel.json` Cron schedule and linked to Vercel Cron plan limits.
+- The final implementation uses an hourly GitHub Actions schedule to call the same authenticated endpoint. The repository `CRON_SECRET` and the app deployment `CRON_SECRET` must match before scheduled delivery is enabled.

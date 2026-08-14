@@ -190,3 +190,60 @@ test('account details exposes direct actions and prompts for a follow-up after G
   await page.getByRole('button', { name: 'Not now' }).click();
   await expect(page.getByRole('heading', { name: 'Set follow-up?' })).toBeHidden();
 });
+
+test('add contact supports multiple CRM roles and requires explicit replacement of occupied slots', async ({ page }) => {
+  const payloads: Array<Record<string, unknown>> = [];
+  await page.route('**/api/contacts', async (route) => {
+    const payload = route.request().postDataJSON() as Record<string, unknown>;
+    payloads.push(payload);
+    if (!payload.overwriteRoles) {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'role_collision',
+          contact: null,
+          collisions: [{
+            role: 'PRIMARY_CONTACT',
+            label: 'Primary Contact',
+            existingContacts: [{ id: 'existing-contact', name: 'Existing Buyer' }],
+          }],
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'created_verified',
+        accountPageId: store.notionPageId,
+        contact: { id: 'created-contact', name: 'Jordan Lee', position: 'Buyer', email: 'jordan@example.com', phone: null },
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Add contact' }).click();
+  await page.getByRole('button', { name: /Harbor House.*New York, NY/s }).click();
+  await page.getByLabel('Full name *').fill('Jordan Lee');
+  await page.getByLabel('Role / position *').fill('Buyer');
+  await page.getByLabel('Primary Contact').check();
+  await page.getByLabel('Billing Contact').check();
+  await page.getByRole('button', { name: 'Save contact' }).click();
+
+  await expect(page.getByText('Primary Contact: Existing Buyer')).toBeVisible();
+  await expect(page.getByText('Nothing has been overwritten yet.')).toBeVisible();
+  await page.getByLabel('Billing Contact').uncheck();
+  await expect(page.getByRole('button', { name: 'Replace and save' })).toBeHidden();
+  await page.getByLabel('Billing Contact').check();
+  await page.getByRole('button', { name: 'Save contact' }).click();
+  await expect(page.getByRole('button', { name: 'Replace and save' })).toBeVisible();
+  await page.getByRole('button', { name: 'Replace and save' }).click();
+  await expect(page.getByRole('dialog', { name: 'Add contact' }).getByText('Contact created and linked to the account in Notion.')).toBeVisible();
+  expect(payloads).toHaveLength(3);
+  expect(payloads[0]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: false });
+  expect(payloads[1]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: false });
+  expect(payloads[2]).toMatchObject({ roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'], overwriteRoles: true });
+});

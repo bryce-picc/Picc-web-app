@@ -44,6 +44,8 @@ function fakeAdapter(options: {
       ? vi.fn().mockRejectedValue(options.ensureError)
       : vi.fn().mockResolvedValue(undefined),
     verifyBothSides: vi.fn().mockResolvedValue(options.verify ?? true),
+    getRoleAssignments: vi.fn().mockResolvedValue({}),
+    assignRoles: vi.fn().mockResolvedValue(undefined),
     refreshContacts: vi.fn().mockResolvedValue(undefined),
   } satisfies ContactCreationAdapter;
 
@@ -81,6 +83,35 @@ describe('verified contact creation', () => {
     expect(adapter.refreshContacts).toHaveBeenCalledTimes(1);
   });
 
+  it('returns a collision preview before creating or replacing an occupied role', async () => {
+    const adapter = fakeAdapter({ existing: null });
+    adapter.getRoleAssignments.mockResolvedValue({
+      PRIMARY_CONTACT: [{ id: 'existing-page', name: 'Existing Buyer' }],
+    });
+
+    const result = await createVerifiedContact(input({ roles: ['PRIMARY_CONTACT'] }), adapter);
+
+    expect(result).toMatchObject({
+      status: 'role_collision',
+      collisions: [{ role: 'PRIMARY_CONTACT', label: 'Primary Contact' }],
+    });
+    expect(adapter.createContact).not.toHaveBeenCalled();
+    expect(adapter.assignRoles).not.toHaveBeenCalled();
+  });
+
+  it('assigns multiple selected roles after explicit overwrite confirmation', async () => {
+    const adapter = fakeAdapter({ existing: null });
+    adapter.getRoleAssignments.mockResolvedValue({
+      PRIMARY_CONTACT: [{ id: 'existing-page', name: 'Existing Buyer' }],
+    });
+    const roles = ['PRIMARY_CONTACT', 'BILLING_CONTACT'] as const;
+
+    const result = await createVerifiedContact(input({ roles: [...roles], overwriteRoles: true }), adapter);
+
+    expect(result.status).toBe('created_verified');
+    expect(adapter.assignRoles).toHaveBeenCalledWith('account-page', 'contact-page', [...roles]);
+  });
+
   it('allows the same normalized name at a different account', async () => {
     const adapter = fakeAdapter({ existing: null });
 
@@ -116,6 +147,28 @@ describe('verified contact creation', () => {
     expect(result.status).toBe('partial_relation');
     expect(adapter.createContact).toHaveBeenCalledTimes(1);
     expect(adapter.refreshContacts).not.toHaveBeenCalled();
+  });
+
+  it('preserves selected roles in retry context and assigns them again during repair', async () => {
+    const adapter = fakeAdapter({ existing: null, verify: false });
+    const roles = ['PRIMARY_CONTACT', 'BILLING_CONTACT'] as const;
+
+    const initial = await createVerifiedContact(input({ roles: [...roles] }), adapter);
+
+    expect(initial).toMatchObject({
+      status: 'partial_relation',
+      retry: { accountPageId: 'account-page', contactPageId: 'contact-page', roles: [...roles] },
+    });
+
+    adapter.verifyBothSides.mockResolvedValue(true);
+    adapter.assignRoles.mockClear();
+    const retried = await retryVerifiedContactLink(
+      { accountPageId: 'account-page', contactPageId: 'contact-page', roles: [...roles] },
+      adapter,
+    );
+
+    expect(retried.status).toBe('existing_verified');
+    expect(adapter.assignRoles).toHaveBeenCalledWith('account-page', 'contact-page', [...roles]);
   });
 
   it('retries relationship repair without creating another contact', async () => {

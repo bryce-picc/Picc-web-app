@@ -92,6 +92,30 @@ describe('contact write routes', () => {
     await expect(response.json()).resolves.toEqual(partial);
   });
 
+  it('returns conflict details without creating when a requested CRM role is occupied', async () => {
+    const collision = {
+      status: 'role_collision' as const,
+      accountPageId,
+      contact: null,
+      collisions: [{ role: 'PRIMARY_CONTACT', label: 'Primary Contact', existingContacts: [{ id: 'existing', name: 'Existing Buyer' }] }],
+    };
+    await mockDependencies({ createResult: collision });
+    const { POST } = await import('@/app/api/contacts/route');
+
+    const response = (await POST(request('/api/contacts', {
+      accountPageId,
+      name: 'Maya Chen',
+      position: 'Buyer',
+      email: null,
+      phone: null,
+      roles: ['PRIMARY_CONTACT'],
+      overwriteRoles: false,
+    }))) as Response;
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual(collision);
+  });
+
   it('rejects malformed contact payloads before calling the external boundary', async () => {
     await mockDependencies();
     const domain = await import('@/lib/server/contact-creation');
@@ -122,12 +146,12 @@ describe('contact write routes', () => {
     const { POST } = await import('@/app/api/contacts/retry/route');
 
     const response = (await POST(
-      request('/api/contacts/retry', { accountPageId, contactPageId }),
+      request('/api/contacts/retry', { accountPageId, contactPageId, roles: ['PRIMARY_CONTACT'] }),
     )) as Response;
 
     expect(response.status).toBe(200);
     expect(vi.mocked(domain.retryVerifiedContactLink)).toHaveBeenCalledWith(
-      { accountPageId, contactPageId },
+      { accountPageId, contactPageId, roles: ['PRIMARY_CONTACT'] },
       { boundary: 'notion' },
     );
   });

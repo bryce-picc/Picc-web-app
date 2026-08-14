@@ -24,6 +24,7 @@ describe('contact create UI model', () => {
         position: ' Buyer ',
         email: ' ',
         phone: ' 212-555-0187 ',
+        roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'],
       }),
     ).toEqual({
       accountPageId: 'account-id',
@@ -31,6 +32,8 @@ describe('contact create UI model', () => {
       position: 'Buyer',
       email: null,
       phone: '212-555-0187',
+      roles: ['PRIMARY_CONTACT', 'BILLING_CONTACT'],
+      overwriteRoles: false,
     });
   });
 

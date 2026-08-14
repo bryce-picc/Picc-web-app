@@ -216,6 +216,9 @@ model OrganizationWorkspace {
   memberships               Membership[]
   accounts                  Account[]
   contacts                  Contact[]
+  crmContactProfiles        CrmContactProfile[]
+  crmContactReminders       CrmContactReminder[]
+  crmContactActivities      CrmContactActivity[]
   tags                      Tag[]
   pipelines                 Pipeline[]
   opportunities             Opportunity[]
@@ -462,6 +465,61 @@ model Contact {
   @@index([orgId, accountId])
   @@index([orgId, status])
   @@index([orgId, email])
+}
+
+model CrmContactProfile {
+  id                  String                @id @default(cuid())
+  orgId               String
+  org                 OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  notionContactPageId String
+  favorite            Boolean               @default(false)
+  frequencyDays       Int?
+  lastSeenAt          DateTime?
+  instagramUrl        String?
+  linkedinUrl         String?
+  archivedAt          DateTime?
+  mergedIntoPageId    String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  reminders           CrmContactReminder[]
+  activities          CrmContactActivity[]
+
+  @@unique([orgId, notionContactPageId])
+  @@index([orgId, favorite])
+  @@index([orgId, archivedAt])
+}
+
+model CrmContactReminder {
+  id        String                @id @default(cuid())
+  orgId     String
+  org       OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   CrmContactProfile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  dueAt     DateTime
+  note      String
+  status    TaskStatus            @default(OPEN)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@index([orgId, dueAt, status])
+  @@index([profileId, status])
+}
+
+model CrmContactActivity {
+  id          String                @id @default(cuid())
+  orgId       String
+  org         OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  profileId   String
+  profile     CrmContactProfile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind        String
+  channel     Channel?
+  summary     String
+  occurredAt  DateTime
+  externalUrl String?
+  createdAt   DateTime              @default(now())
+
+  @@index([orgId, occurredAt])
+  @@index([profileId, occurredAt])
 }
 
 model Tag {

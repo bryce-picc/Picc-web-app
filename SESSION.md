@@ -1,44 +1,48 @@
-# Session: Issue 171 Territory Drawing Action Clearance
+# Session: Issue 163 Mobile CRM Record Management
 
 ## Linked work
 
-- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/171
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/172
-- Branch: `codex/171-territory-drawing-actions`
-- Worktree: `/Users/brycejohnson/Code/PICC-Web-App`
+- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
+- Branch: `codex/163-contact-profiles`
+- Base branch: `main` after the approved foundation release merged.
+- PR: https://github.com/brycejohnson1417/Picc-web-app/pull/168
 
 ## Scope
 
-- Keep `Finish Shape` and `Clear` fully visible and tappable above fixed mobile actions.
-- Preserve the existing `Save Boundary` clearance from the primary bottom navigation.
-- Add a phone-sized Playwright regression covering visibility, geometry, and interaction.
+- Improve mobile CRM record-management usability through existing app boundaries.
+- Add safe, explicit controls for supported record metadata and maintenance workflows.
+- Add focused deterministic and mobile-browser coverage.
 
 ## Out of scope
 
-- Territory geometry, persistence, permissions, or API changes.
-- Primary map navigation redesign.
+- New provider integrations, device-history ingestion, and scheduled reporting.
+- Production-data changes during verification.
 - Changes to `/Users/brycejohnson/Code/map-app`.
 
 ## Constraints
 
-- Reproduce the clipping with a RED browser test before changing the component.
-- Keep the fix localized to the existing mobile territory boundary sheet.
-- Preserve portrait, landscape, keyboard, and desktop behavior.
-- Run `npm run verify`, the focused territory E2E spec, and the full E2E suite before completion.
+- Preserve the current PWA shell, tenant scope, permissions, and explicit external-service boundaries.
+- Use RED-first tests for behavior changes.
+- Run `npm run verify` and `npm run test:e2e`.
+- Capture mobile browser proof for changed UI flows.
 
 ## Ownership and overlap
 
-- Owned paths: `components/mobile/territory-boundary-sheet.tsx`, `tests/e2e/territory-boundary-editor.spec.ts`, browser proof artifacts, and `SESSION.md`.
-- Open PRs were checked; none owns the territory boundary sheet or its E2E spec.
-- The unrelated untracked `.agents/account-detail-redirect-ai-tab.png` is not part of this work.
+- Owned paths: focused mobile CRM UI and domain/server boundaries, tests, `SESSION.md`, and UI evidence.
+- Stacked on merged PR #167 for the shared action foundation.
+- Latest `main` changes, including the territory drawing clearance fix, are integrated without modifying their behavior.
 
-## Validation plan
+## Validation evidence
 
-- RED: at 390x844, assert `Finish Shape` and `Clear` do not extend under the fixed Save footer and can receive pointer clicks.
-- GREEN: run the focused territory boundary editor Playwright spec.
-- Regression: run repository verification and the full Playwright suite.
-- Visual: capture the corrected phone viewport with the drawing actions visible above bottom UI.
+- `npm run verify` passed after integrating current `main` and all review passes: lint, typecheck, 39 Vitest files / 184 tests, Prisma validation, and production build.
+- Full browser suite passed on an isolated port: `PICC_AGENT_DEV_PORT=3180 npx playwright test --workers=1` (29 tests).
+- Final focused contact browser suite passed on port 3182 (3 tests) after archive authorization, merge-target restoration, immediate timeline, and loading-state changes.
+- Focused API/domain suite passed: 8 files / 38 tests.
+- Mobile browser proof covered favorite/profile editing, reminders through visible completion, save-to-phone vCard download, role-collision confirmation, and guarded maintenance dialogs.
+- Review regressions cover full Notion relation pagination, role-preserving merges and retries, stale collision invalidation, API-aligned role controls, load-safe partial profile updates, metadata consolidation, and recoverable cross-system merge retries.
+- UI evidence: `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/contact-profile-mobile.png`.
 
-## Current state
+## Remaining verification boundary
 
-RED reproduced the scrolling controls at y=81 instead of their original y=663. The fixed action footer is implemented and verified at portrait, landscape, short desktop, and reported desktop sizes. After rebasing onto current `main`, `npm run verify` passes with 159 unit tests and all 28 Playwright tests pass; PR review and merge remain.
+- Production UI proof follows merge and deployment.
+- Schema migration and user-triggered live CRM maintenance were approved before merge.

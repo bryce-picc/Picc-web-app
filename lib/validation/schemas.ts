@@ -35,11 +35,14 @@ export const notionContactCreateSchema = z.object({
   position: z.string().trim().min(1).max(160),
   email: z.string().trim().email().max(320).nullable(),
   phone: z.string().trim().max(40).nullable(),
+  roles: z.array(z.enum(['PRIMARY_CONTACT', 'SECOND_CONTACT', 'PPP_2', 'PPP_3', 'BILLING_CONTACT'])).max(5).default([]),
+  overwriteRoles: z.boolean().default(false),
 });
 
 export const notionContactRetrySchema = z.object({
   accountPageId: notionPageIdSchema,
   contactPageId: notionPageIdSchema,
+  roles: z.array(z.enum(['PRIMARY_CONTACT', 'SECOND_CONTACT', 'PPP_2', 'PPP_3', 'BILLING_CONTACT'])).max(5).optional(),
 });
 
 export const quickLogSchema = z.object({

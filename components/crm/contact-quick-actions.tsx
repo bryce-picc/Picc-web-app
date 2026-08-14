@@ -38,10 +38,14 @@ export function ContactQuickActions({
   contact,
   accounts,
   className,
+  labels = 'responsive',
+  onActivityLogged,
 }: {
   contact: ContactQuickActionContact;
   accounts: ContactQuickActionAccount[];
   className?: string;
+  labels?: 'responsive' | 'always';
+  onActivityLogged?: (activity: { id: string; summary: string; channel: string | null; occurredAt: string; externalUrl: string | null }) => void;
 }) {
   const [pendingAction, setPendingAction] = useState<ContactActionKind | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState(accounts.length === 1 ? accounts[0]?.id ?? '' : '');
@@ -120,12 +124,35 @@ export function ContactQuickActions({
             className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg border border-[#cfd6e1] bg-white px-2.5 text-[13px] font-semibold text-[#263242] transition hover:border-[#9eabba] hover:bg-[#f3f6fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#276fd3] active:scale-[0.98]"
             onClick={(event) => {
               event.stopPropagation();
+              if (/^(?:[0-9a-f]{32}|[0-9a-f-]{36})$/i.test(contact.id)) {
+                void fetch(`/api/contacts/${encodeURIComponent(contact.id)}/activity`, {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ action: kind }),
+                  keepalive: true,
+                })
+                  .then(async (response) => {
+                    if (!response.ok) return;
+                    const payload = (await response.json()) as { activity?: { id?: string; summary?: string; channel?: string | null; occurredAt?: string; externalUrl?: string | null } };
+                    const activity = payload.activity;
+                    if (activity?.id && activity.summary && activity.occurredAt) {
+                      onActivityLogged?.({
+                        id: activity.id,
+                        summary: activity.summary,
+                        channel: activity.channel ?? null,
+                        occurredAt: activity.occurredAt,
+                        externalUrl: activity.externalUrl ?? null,
+                      });
+                    }
+                  })
+                  .catch(() => undefined);
+              }
               setPendingAction(kind);
               setError(null);
             }}
           >
             <Icon className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden xl:inline">{label}</span>
+            <span className={labels === 'always' ? undefined : 'hidden xl:inline'}>{label}</span>
           </a>
         ))}
       </div>

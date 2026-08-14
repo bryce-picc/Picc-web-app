@@ -35,9 +35,9 @@
 
 ## Validation evidence
 
-- Pre-rebase validation passed: lint, typecheck, 38 Vitest files / 167 tests, Prisma validation, production build, and 28 Chromium tests.
+- Current-main `npm run verify` passed: lint, typecheck, 42 Vitest files / 193 tests, Prisma validation, and production build.
+- Full browser suite passed on an isolated port: `PICC_AGENT_DEV_PORT=3169 npx playwright test --workers=1` (31 tests).
 - Focused mobile browser flows passed for suggested-contact review and prefilled quick add, connected/disconnected Settings states, explicit disconnect confirmation, and contact email-thread links.
-- Current-main verification will be rerun before merge.
 
 ## Remaining deployment boundary
 

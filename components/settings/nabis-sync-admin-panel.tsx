@@ -284,8 +284,6 @@ export function NabisSyncAdminPanel() {
             ))}
           </div>
 
-          <NabisIdentityReviewPanel />
-
           <label className="flex items-start gap-3 rounded-2xl border border-[#d6dae2] bg-[#f7f9fc] px-4 py-4">
             <input
               type="checkbox"
@@ -350,6 +348,8 @@ export function NabisSyncAdminPanel() {
           </div>
         </>
       ) : null}
+
+      <NabisIdentityReviewPanel />
     </WorkspacePanel>
   );
 }

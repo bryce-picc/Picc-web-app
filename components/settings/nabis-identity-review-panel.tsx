@@ -92,7 +92,7 @@ export function NabisIdentityReviewPanel() {
   }
 
   return (
-    <section id="nabis-identity-review" className="scroll-mt-24 rounded-2xl border border-[#d6dae2] bg-white px-4 py-5 sm:px-5">
+    <section id="nabis-identity-review" className="scroll-mt-24 rounded-2xl border border-[#d6dae2] bg-white px-4 py-5 [&_button]:min-h-11 sm:px-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -113,14 +113,14 @@ export function NabisIdentityReviewPanel() {
           <Badge variant={data?.emailProviderReady ? 'success' : 'warning'}>{data?.emailProviderReady ? 'email ready' : 'email setup required'}</Badge>
         </div>
         <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_auto_auto_auto] lg:items-end">
-          <label className="text-[13px] font-medium text-[#38404d]">Review email
+          <label className="text-sm font-medium text-[#38404d]">Review email
             <input type="email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} className="mt-1 block h-11 w-full rounded-xl border border-[#cbd2dc] bg-white px-3 text-sm outline-none focus:border-[#5f86e8] focus:ring-2 focus:ring-[#dce7ff]" placeholder="admin@company.com" />
           </label>
           <Toggle label="Email" checked={emailEnabled} onChange={setEmailEnabled} />
           <Toggle label="In-app" checked={inAppEnabled} onChange={setInAppEnabled} />
-          <Button type="button" onClick={() => void savePreference()} disabled={saving || !email.trim()}>{saving ? 'Saving…' : 'Save alerts'}</Button>
+          <Button type="button" className="bg-[#24324f] text-white hover:bg-[#1c2840]" onClick={() => void savePreference()} disabled={saving || !email.trim()}>{saving ? 'Saving…' : 'Save alerts'}</Button>
         </div>
-        {!data?.emailProviderReady ? <p className="mt-3 text-[12px] text-[#9a5717]">In-app review remains active. Production email starts when the approved sender is connected.</p> : null}
+        {!data?.emailProviderReady ? <p className="mt-3 text-sm text-[#9a5717] sm:text-[12px]">In-app review remains active. Production email starts when the approved sender is connected.</p> : null}
       </div>
 
       <div className="mt-4 space-y-3">
@@ -134,18 +134,18 @@ export function NabisIdentityReviewPanel() {
               <div className="flex min-w-0 items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#ae6114]" /><div>
                 <p className="font-semibold text-[#352818]">{conflict.metadata.incomingAccountName}</p>
                 <p className="mt-1 text-sm text-[#6c5537]">Current CRM owner: {conflict.metadata.currentOwnerAccountName ?? 'none'} · seen {conflict.metadata.occurrenceCount} time{conflict.metadata.occurrenceCount === 1 ? '' : 's'}</p>
-                <p className="mt-1 text-[12px] text-[#826846]">Last detected {dateTime(conflict.metadata.lastDetectedAt)}</p>
-                <p className="mt-2 text-[12px] text-[#6c5537]">Nabis retailer {conflict.metadata.sourceIdentifiers.nabisRetailerId ?? 'unknown'} · license {conflict.metadata.sourceIdentifiers.licenseNumber ?? 'unknown'}</p>
+                <p className="mt-1 text-sm text-[#826846] sm:text-[12px]">Last detected {dateTime(conflict.metadata.lastDetectedAt)}</p>
+                <p className="mt-2 text-sm text-[#6c5537] sm:text-[12px]">Nabis retailer {conflict.metadata.sourceIdentifiers.nabisRetailerId ?? 'unknown'} · license {conflict.metadata.sourceIdentifiers.licenseNumber ?? 'unknown'}</p>
               </div></div>
               <Badge variant={conflict.metadata.email.status === 'SENT' ? 'success' : 'warning'}>email {conflict.metadata.email.status.toLowerCase()}</Badge>
             </div>
             {isConfirming ? <div className="mt-4 rounded-xl border border-[#d8b477] bg-white p-3">
               <p className="text-sm font-semibold text-[#352818]">{confirm.decision === 'KEEP_CURRENT_OWNER' ? `Keep ${conflict.metadata.currentOwnerAccountName ?? 'the current CRM owner'}?` : `Transfer the CRM page to ${conflict.metadata.incomingAccountName}?`}</p>
-              <p className="mt-1 text-[12px] text-[#6c5537]">This records an explicit identity override and audit event. Future syncs follow your decision.</p>
-              <div className="mt-3 flex gap-2"><Button type="button" onClick={() => void runAction({ action: 'resolve', notificationId: conflict.id, decision: confirm.decision }, 'Identity conflict resolved.')} disabled={isActing}>{isActing ? 'Resolving…' : 'Confirm decision'}</Button><Button type="button" variant="secondary" onClick={() => setConfirm(null)} disabled={isActing}>Cancel</Button></div>
+              <p className="mt-1 text-sm text-[#6c5537] sm:text-[12px]">This records an explicit identity override and audit event. Future syncs follow your decision.</p>
+              <div className="mt-3 flex gap-2"><Button type="button" className="bg-[#24324f] text-white hover:bg-[#1c2840]" onClick={() => void runAction({ action: 'resolve', notificationId: conflict.id, decision: confirm.decision }, 'Identity conflict resolved.')} disabled={isActing}>{isActing ? 'Resolving…' : 'Confirm decision'}</Button><Button type="button" variant="secondary" onClick={() => setConfirm(null)} disabled={isActing}>Cancel</Button></div>
             </div> : <div className="mt-4 flex flex-wrap gap-2">
               {conflict.metadata.currentOwnerAccountName ? <Button type="button" variant="secondary" onClick={() => setConfirm({ id: conflict.id, decision: 'KEEP_CURRENT_OWNER' })}>Keep current owner</Button> : null}
-              <Button type="button" onClick={() => setConfirm({ id: conflict.id, decision: 'TRANSFER_TO_INCOMING' })}>Transfer to Nabis account</Button>
+              <Button type="button" className="bg-[#24324f] text-white hover:bg-[#1c2840]" onClick={() => setConfirm({ id: conflict.id, decision: 'TRANSFER_TO_INCOMING' })}>Transfer to Nabis account</Button>
               {conflict.metadata.email.status !== 'SENT' ? <Button type="button" variant="ghost" onClick={() => void runAction({ action: 'retry-email', notificationId: conflict.id }, 'Conflict email retried.')} disabled={isActing || !data?.emailProviderReady}>Retry email</Button> : null}
             </div>}
           </article>;

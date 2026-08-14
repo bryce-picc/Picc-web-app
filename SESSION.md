@@ -3,7 +3,7 @@
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/171
-- Draft PR: pending
+- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/172
 - Branch: `codex/171-territory-drawing-actions`
 - Worktree: `/Users/brycejohnson/Code/PICC-Web-App`
 
@@ -41,4 +41,4 @@
 
 ## Current state
 
-Issue and branch created. Regression test is next; production component code has not been changed.
+RED reproduced the scrolling controls at y=81 instead of their original y=663. The fixed action footer is implemented and verified at portrait, landscape, short desktop, and reported desktop sizes. After rebasing onto current `main`, `npm run verify` passes with 159 unit tests and all 28 Playwright tests pass; PR review and merge remain.

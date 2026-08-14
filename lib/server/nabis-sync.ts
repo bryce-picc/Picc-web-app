@@ -7,6 +7,7 @@ import { ensureAccountIdentityMappings, resolveCanonicalAccountByIdentifiers } f
 import { appendAuditEvent } from '@/lib/server/audit-log';
 import { ensureDispensaryCrmPageFromRetailer } from '@/lib/server/notion-crm-sync';
 import { ensureActivePolicySnapshot } from '@/lib/server/policy-snapshots';
+import { assessNabisIdentityLink, persistNabisIdentityConflict } from '@/lib/server/nabis-identity-conflicts';
 import { excludedInternalTransferRetailers, isExcludedInternalTransferRetailerName } from '@/lib/nabis/internal-transfers';
 
 const DEFAULT_API_BASE_URL = 'https://platform-api.nabis.pro';
@@ -223,6 +224,14 @@ function requiredApiKey() {
     throw new Error('NABIS_API_KEY is required');
   }
   return apiKey;
+}
+
+function identityConflictRecipientKey(actor?: SyncActor) {
+  if (actor?.clerkUserId?.trim()) {
+    return actor.clerkUserId.trim();
+  }
+  const adminEmail = process.env.PICC_ADMIN_EMAIL?.trim().toLowerCase() || 'bryce@piccplatform.com';
+  return `email:${adminEmail}`;
 }
 
 function getApiBaseUrl() {
@@ -1239,26 +1248,64 @@ async function upsertLocalAccountFromRetailer(
       notionPageId: account.notionPageId,
     });
     notionPageId = notion.pageId;
-
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
+    const currentOwner = await prisma.account.findFirst({
+      where: {
+        orgId,
         notionPageId,
       },
-    });
-
-    await appendAuditEvent({
-      orgId,
-      action: notion.created ? 'CRM_ACCOUNT_CREATED_FROM_NABIS' : 'CRM_ACCOUNT_LINKED_FROM_NABIS',
-      entityType: 'Account',
-      entityId: account.id,
-      actorClerkUserId: actor?.clerkUserId ?? null,
-      actorEmail: actor?.email ?? null,
-      metadata: {
-        licensedLocationId: retailer.licensedLocationId,
-        notionPageId,
+      select: {
+        id: true,
+        name: true,
       },
     });
+    const linkDecision = assessNabisIdentityLink({
+      reviewRequired: notion.reviewRequired === true,
+      incomingAccountId: account.id,
+      ownerAccountId: currentOwner?.id ?? null,
+    });
+
+    if (linkDecision === 'REVIEW') {
+      notionPageId = account.notionPageId;
+      try {
+        await persistNabisIdentityConflict({
+          orgId,
+          recipientKey: identityConflictRecipientKey(actor),
+          incomingAccountId: account.id,
+          incomingAccountName: account.name,
+          candidatePageId: notion.pageId,
+          currentOwnerAccountId: currentOwner?.id ?? null,
+          currentOwnerAccountName: currentOwner?.name ?? null,
+          reason: notion.reviewReason ?? 'page_owned_by_another_account',
+          sourceIdentifiers: {
+            licensedLocationId: retailer.licensedLocationId,
+            nabisRetailerId: retailer.externalRetailerId,
+            licenseNumber: retailer.licenseNumber,
+          },
+        });
+      } catch (error) {
+        console.error('[picc-nabis-identity-review]', error);
+      }
+    } else {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: {
+          notionPageId,
+        },
+      });
+
+      await appendAuditEvent({
+        orgId,
+        action: notion.created ? 'CRM_ACCOUNT_CREATED_FROM_NABIS' : 'CRM_ACCOUNT_LINKED_FROM_NABIS',
+        entityType: 'Account',
+        entityId: account.id,
+        actorClerkUserId: actor?.clerkUserId ?? null,
+        actorEmail: actor?.email ?? null,
+        metadata: {
+          licensedLocationId: retailer.licensedLocationId,
+          notionPageId,
+        },
+      });
+    }
   }
 
   await ensureAccountIdentityMappings({

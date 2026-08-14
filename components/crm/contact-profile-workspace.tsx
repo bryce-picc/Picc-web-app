@@ -83,21 +83,14 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
       .slice(0, 50);
   }, [contact.id, contacts, mergeSearch]);
 
-  async function saveProfile(next = profile) {
+  async function saveProfile(changes: Partial<Pick<ProfilePayload, 'favorite' | 'frequencyDays' | 'lastSeenAt' | 'instagramUrl' | 'linkedinUrl'>> & { archived?: boolean }) {
     setSaving(true);
     setError(null);
     try {
       const response = await fetch(profileUrl, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          favorite: next.favorite,
-          frequencyDays: next.frequencyDays,
-          lastSeenAt: next.lastSeenAt,
-          instagramUrl: next.instagramUrl?.trim() || null,
-          linkedinUrl: next.linkedinUrl?.trim() || null,
-          archived: Boolean(next.archivedAt),
-        }),
+        body: JSON.stringify(changes),
       });
       const payload = (await response.json().catch(() => ({}))) as { profile?: ProfilePayload; error?: string };
       if (!response.ok) throw new Error(payload.error || 'Contact profile could not be saved.');
@@ -203,7 +196,7 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
         <div className="flex items-center justify-between">
           <Link href="/contacts" className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[#526071] hover:bg-white"><ChevronLeft className="h-4 w-4" /> Contacts</Link>
           <div className="relative flex items-center gap-1">
-            {canEditProfile ? <button type="button" disabled={loading || saving} onClick={() => { const next = { ...profile, favorite: !profile.favorite }; setProfile(next); void saveProfile(next); }} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white disabled:cursor-not-allowed disabled:opacity-50" aria-label={profile.favorite ? 'Remove from favorites' : 'Add to favorites'}>
+            {canEditProfile ? <button type="button" disabled={loading || saving} onClick={() => { const favorite = !profile.favorite; setProfile((current) => ({ ...current, favorite })); void saveProfile({ favorite }); }} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white disabled:cursor-not-allowed disabled:opacity-50" aria-label={profile.favorite ? 'Remove from favorites' : 'Add to favorites'}>
               <Star className={cn('h-5 w-5', profile.favorite ? 'fill-amber-400 text-amber-500' : 'text-[#657081]')} />
             </button> : profile.favorite ? <span className="grid h-11 w-11 place-items-center" aria-label="Favorite contact"><Star className="h-5 w-5 fill-amber-400 text-amber-500" /></span> : null}
             {canManageLifecycle || canDeleteOrMerge ? <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#d5dce7] bg-white" aria-label="Contact options"><MoreHorizontal className="h-5 w-5" /></button> : null}
@@ -230,7 +223,7 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <ContactQuickActions contact={contact} accounts={accounts} labels="always" />
+            <ContactQuickActions contact={contact} accounts={accounts} labels="always" onActivityLogged={(occurredAt) => setProfile((current) => ({ ...current, lastSeenAt: !current.lastSeenAt || occurredAt > current.lastSeenAt ? occurredAt : current.lastSeenAt }))} />
             {profile.instagramUrl ? <a href={profile.instagramUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-lg border border-[#cfd6e1] bg-white" aria-label={`Open ${contact.name} on Instagram`}><Instagram className="h-4 w-4" /></a> : null}
             {profile.linkedinUrl ? <a href={profile.linkedinUrl} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-lg border border-[#cfd6e1] bg-white" aria-label={`Open ${contact.name} on LinkedIn`}><Linkedin className="h-4 w-4" /></a> : null}
             <button type="button" onClick={() => void saveToPhone()} className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#cfd6e1] bg-white px-3 text-sm font-semibold"><Download className="h-4 w-4" /> Save to phone</button>
@@ -278,7 +271,7 @@ export function ContactProfileWorkspace({ contact, accounts, contacts }: { conta
               <ProfileField label="LinkedIn"><input disabled={!canEditProfile} type="url" placeholder="https://linkedin.com/in/..." value={profile.linkedinUrl ?? ''} onChange={(event) => setProfile((current) => ({ ...current, linkedinUrl: event.target.value }))} /></ProfileField>
             </div>
             <div className="mt-4 grid gap-2 rounded-lg bg-[#f4f6f9] p-3 text-sm sm:grid-cols-2"><p><span className="font-semibold">Email:</span> {contact.email}</p><p><span className="font-semibold">Phone:</span> {contact.phone}</p><p><span className="font-semibold">Company:</span> {contact.accountName}</p><p><span className="font-semibold">Source:</span> {contact.linkedWork}</p></div>
-            {canEditProfile ? <button type="button" onClick={() => void saveProfile()} disabled={saving} className="mt-4 min-h-11 rounded-lg bg-[#c93412] px-5 font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : 'Save details'}</button> : null}
+            {canEditProfile ? <button type="button" onClick={() => void saveProfile({ frequencyDays: profile.frequencyDays, lastSeenAt: profile.lastSeenAt, instagramUrl: profile.instagramUrl?.trim() || null, linkedinUrl: profile.linkedinUrl?.trim() || null })} disabled={saving} className="mt-4 min-h-11 rounded-lg bg-[#c93412] px-5 font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : 'Save details'}</button> : null}
           </section>
         ) : null}
       </div>

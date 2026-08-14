@@ -39,11 +39,13 @@ export function ContactQuickActions({
   accounts,
   className,
   labels = 'responsive',
+  onActivityLogged,
 }: {
   contact: ContactQuickActionContact;
   accounts: ContactQuickActionAccount[];
   className?: string;
   labels?: 'responsive' | 'always';
+  onActivityLogged?: (occurredAt: string) => void;
 }) {
   const [pendingAction, setPendingAction] = useState<ContactActionKind | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState(accounts.length === 1 ? accounts[0]?.id ?? '' : '');
@@ -128,7 +130,13 @@ export function ContactQuickActions({
                   headers: { 'content-type': 'application/json' },
                   body: JSON.stringify({ action: kind }),
                   keepalive: true,
-                }).catch(() => undefined);
+                })
+                  .then(async (response) => {
+                    if (!response.ok) return;
+                    const payload = (await response.json()) as { activity?: { occurredAt?: string } };
+                    if (payload.activity?.occurredAt) onActivityLogged?.(payload.activity.occurredAt);
+                  })
+                  .catch(() => undefined);
               }
               setPendingAction(kind);
               setError(null);

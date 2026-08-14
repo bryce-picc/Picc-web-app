@@ -63,6 +63,20 @@ describe('contact profile routes', () => {
     }));
   });
 
+  it('updates only the supplied profile field so favorite changes cannot overwrite a newer interaction', async () => {
+    const prisma = mocks();
+    const { PATCH } = await import('@/app/api/contacts/[contactId]/profile/route');
+    const response = await PATCH(request(`/api/contacts/${contactId}/profile`, 'PATCH', {
+      favorite: true,
+    }), { params: Promise.resolve({ contactId }) });
+
+    expect(response?.status).toBe(200);
+    expect(prisma.crmContactProfile.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ favorite: true }),
+      update: { favorite: true },
+    }));
+  });
+
   it('logs only the honest external-app launch and updates last seen', async () => {
     const prisma = mocks();
     const { POST } = await import('@/app/api/contacts/[contactId]/activity/route');

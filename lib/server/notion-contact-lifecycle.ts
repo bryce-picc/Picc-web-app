@@ -40,7 +40,7 @@ function normalizeId(value: string) {
   return value.replace(/-/g, '').trim().toLowerCase();
 }
 
-async function loadVerifiedContactPage(contactPageId: string) {
+async function loadVerifiedContactPage(contactPageId: string, allowTrash = false) {
   const [database, page] = await Promise.all([
     notionRequest<{ data_sources?: Array<{ id?: string }> }>(`/databases/${requiredContactsDatabaseId()}`),
     notionRequest<NotionPage>(`/pages/${contactPageId}`),
@@ -48,7 +48,7 @@ async function loadVerifiedContactPage(contactPageId: string) {
   const sourceId = database.data_sources?.find((source) => source.id)?.id;
   if (
     !sourceId ||
-    page.in_trash ||
+    (!allowTrash && page.in_trash) ||
     page.parent?.type !== 'data_source_id' ||
     normalizeId(page.parent.data_source_id ?? '') !== normalizeId(sourceId)
   ) {
@@ -97,11 +97,16 @@ export async function trashNotionContact(contactPageId: string) {
   await notionRequest(`/pages/${contactPageId}`, { method: 'PATCH', body: JSON.stringify({ in_trash: true }) });
 }
 
-export async function mergeNotionContacts(sourcePageId: string, targetPageId: string) {
+export async function mergeNotionContacts(
+  sourcePageId: string,
+  targetPageId: string,
+  options: { allowAlreadyTrashed?: boolean } = {},
+) {
   const [source, target] = await Promise.all([
-    loadVerifiedContactPage(sourcePageId),
+    loadVerifiedContactPage(sourcePageId, options.allowAlreadyTrashed),
     loadVerifiedContactPage(targetPageId),
   ]);
+  if (source.in_trash && options.allowAlreadyTrashed) return;
 
   const sourceProps = source.properties ?? {};
   const targetProps = target.properties ?? {};

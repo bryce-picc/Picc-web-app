@@ -89,4 +89,17 @@ describe('Notion contact lifecycle', () => {
     await expect(trashNotionContact('source')).rejects.toThrow('Contact not found');
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it('allows a staged retry to complete when Notion already trashed the merged source', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.endsWith('/databases/contacts-db')) return response({ data_sources: [{ id: 'contacts-source' }] });
+      if (url.endsWith('/pages/source')) return response({ id: 'source', in_trash: true, parent: { type: 'data_source_id', data_source_id: 'contacts-source' }, properties: {} });
+      if (url.endsWith('/pages/target')) return response({ id: 'target', in_trash: false, parent: { type: 'data_source_id', data_source_id: 'contacts-source' }, properties: {} });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(mergeNotionContacts('source', 'target', { allowAlreadyTrashed: true })).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
 });

@@ -5,13 +5,24 @@ import { parseJsonBody, routeErrorResponse } from '@/lib/api/route-errors';
 import { prisma } from '@/lib/db/prisma';
 
 const profileSchema = z.object({
-  favorite: z.boolean(),
-  frequencyDays: z.number().int().min(1).max(365).nullable(),
-  lastSeenAt: z.string().datetime().nullable(),
-  instagramUrl: z.string().trim().url().max(500).nullable(),
-  linkedinUrl: z.string().trim().url().max(500).nullable(),
-  archived: z.boolean(),
-});
+  favorite: z.boolean().optional(),
+  frequencyDays: z.number().int().min(1).max(365).nullable().optional(),
+  lastSeenAt: z.string().datetime().nullable().optional(),
+  instagramUrl: z.string().trim().url().max(500).nullable().optional(),
+  linkedinUrl: z.string().trim().url().max(500).nullable().optional(),
+  archived: z.boolean().optional(),
+}).refine((value) => Object.keys(value).length > 0, 'Choose at least one contact profile field');
+
+function profileData(payload: z.infer<typeof profileSchema>) {
+  return {
+    ...(payload.favorite === undefined ? {} : { favorite: payload.favorite }),
+    ...(payload.frequencyDays === undefined ? {} : { frequencyDays: payload.frequencyDays }),
+    ...(payload.lastSeenAt === undefined ? {} : { lastSeenAt: payload.lastSeenAt ? new Date(payload.lastSeenAt) : null }),
+    ...(payload.instagramUrl === undefined ? {} : { instagramUrl: payload.instagramUrl }),
+    ...(payload.linkedinUrl === undefined ? {} : { linkedinUrl: payload.linkedinUrl }),
+    ...(payload.archived === undefined ? {} : { archivedAt: payload.archived ? new Date() : null }),
+  };
+}
 
 function normalizeContactId(value: string) {
   const normalized = value.replace(/-/g, '').trim().toLowerCase();
@@ -58,26 +69,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ co
     const { contactId } = await params;
     const notionContactPageId = normalizeContactId(contactId);
     const payload = await parseJsonBody(request, profileSchema);
+    const data = profileData(payload);
     const profile = await prisma.crmContactProfile.upsert({
       where: { orgId_notionContactPageId: { orgId: ctx.orgId, notionContactPageId } },
       create: {
         orgId: ctx.orgId,
         notionContactPageId,
-        favorite: payload.favorite,
-        frequencyDays: payload.frequencyDays,
-        lastSeenAt: payload.lastSeenAt ? new Date(payload.lastSeenAt) : null,
-        instagramUrl: payload.instagramUrl,
-        linkedinUrl: payload.linkedinUrl,
-        archivedAt: payload.archived ? new Date() : null,
+        ...data,
       },
-      update: {
-        favorite: payload.favorite,
-        frequencyDays: payload.frequencyDays,
-        lastSeenAt: payload.lastSeenAt ? new Date(payload.lastSeenAt) : null,
-        instagramUrl: payload.instagramUrl,
-        linkedinUrl: payload.linkedinUrl,
-        archivedAt: payload.archived ? new Date() : null,
-      },
+      update: data,
     });
     return NextResponse.json({ profile });
   } catch (error) {

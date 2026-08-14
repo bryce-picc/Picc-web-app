@@ -4,6 +4,7 @@ import {
   buildRoleCollisionPreview,
   contactProfilePermissions,
   CONTACT_ROLE_OPTIONS,
+  mergeContactProfileValues,
   validateContactMerge,
 } from '@/lib/contacts/contact-profile';
 
@@ -54,6 +55,31 @@ describe('contact profile utilities', () => {
     expect(contactProfilePermissions('BRAND_AMBASSADOR')).toEqual({ canEditProfile: true, canManageLifecycle: false, canDeleteOrMerge: false });
     expect(contactProfilePermissions('FINANCE')).toEqual({ canEditProfile: false, canManageLifecycle: false, canDeleteOrMerge: false });
     expect(contactProfilePermissions('GUEST_VIEWER')).toEqual({ canEditProfile: false, canManageLifecycle: false, canDeleteOrMerge: false });
+  });
+
+  it('consolidates source-only profile metadata without replacing newer target values', () => {
+    expect(mergeContactProfileValues(
+      {
+        favorite: true,
+        frequencyDays: 21,
+        lastSeenAt: new Date('2026-08-14T18:00:00.000Z'),
+        instagramUrl: 'https://instagram.com/source',
+        linkedinUrl: 'https://linkedin.com/in/source',
+      },
+      {
+        favorite: false,
+        frequencyDays: 30,
+        lastSeenAt: new Date('2026-08-13T18:00:00.000Z'),
+        instagramUrl: null,
+        linkedinUrl: 'https://linkedin.com/in/target',
+      },
+    )).toEqual({
+      favorite: true,
+      frequencyDays: 30,
+      lastSeenAt: new Date('2026-08-14T18:00:00.000Z'),
+      instagramUrl: 'https://instagram.com/source',
+      linkedinUrl: 'https://linkedin.com/in/target',
+    });
   });
 
   it('builds an importable vCard with escaped values and supported social links', () => {

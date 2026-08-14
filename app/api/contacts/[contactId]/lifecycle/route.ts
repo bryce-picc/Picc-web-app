@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { guard } from '@/lib/auth/api-guard';
 import { parseJsonBody, routeErrorResponse } from '@/lib/api/route-errors';
-import { validateContactMerge } from '@/lib/contacts/contact-profile';
+import { mergeContactProfileValues, validateContactMerge } from '@/lib/contacts/contact-profile';
 import { prisma } from '@/lib/db/prisma';
 import { mergeNotionContacts, trashNotionContact } from '@/lib/server/notion-contact-lifecycle';
 import { refreshLiveNotionContactsCache } from '@/lib/server/notion-live-crm';
@@ -54,7 +54,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ con
     }
 
     const merge = validateContactMerge({ sourceId, targetId: normalizeContactId(payload.targetId) });
-    await mergeNotionContacts(merge.sourceId, merge.targetId);
     const [sourceProfile, targetProfile] = await Promise.all([
       prisma.crmContactProfile.upsert({
         where: { orgId_notionContactPageId: { orgId: ctx.orgId, notionContactPageId: merge.sourceId } },
@@ -67,11 +66,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ con
         update: {},
       }),
     ]);
+    if (sourceProfile.mergedIntoPageId && sourceProfile.mergedIntoPageId !== merge.targetId) {
+      throw new Error('Contact is already merging into another contact.');
+    }
+    const allowAlreadyTrashed = sourceProfile.mergedIntoPageId === merge.targetId;
+    const mergedProfile = mergeContactProfileValues(sourceProfile, targetProfile);
     await prisma.$transaction([
+      prisma.crmContactProfile.update({ where: { id: targetProfile.id }, data: mergedProfile }),
       prisma.crmContactReminder.updateMany({ where: { orgId: ctx.orgId, profileId: sourceProfile.id }, data: { profileId: targetProfile.id } }),
       prisma.crmContactActivity.updateMany({ where: { orgId: ctx.orgId, profileId: sourceProfile.id }, data: { profileId: targetProfile.id } }),
-      prisma.crmContactProfile.update({ where: { id: sourceProfile.id }, data: { archivedAt: new Date(), mergedIntoPageId: merge.targetId } }),
+      prisma.crmContactProfile.update({ where: { id: sourceProfile.id }, data: { mergedIntoPageId: merge.targetId } }),
     ]);
+    await mergeNotionContacts(merge.sourceId, merge.targetId, { allowAlreadyTrashed });
+    await prisma.crmContactProfile.update({
+      where: { id: sourceProfile.id },
+      data: { archivedAt: new Date(), mergedIntoPageId: merge.targetId },
+    });
     await refreshLiveNotionContactsCache().catch(() => undefined);
     return NextResponse.json({ ok: true, redirectTo: `/contacts/${merge.targetId}` });
   } catch (error) {
@@ -82,6 +92,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ con
         'Invalid contact ID': 400,
         'Choose a different contact to merge into.': 400,
         'Contact not found': 404,
+        'Contact is already merging into another contact.': 409,
       },
     });
   }

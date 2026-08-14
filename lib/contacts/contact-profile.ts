@@ -20,6 +20,29 @@ export function contactProfilePermissions(role: AppRole) {
   return { canEditProfile, canManageLifecycle, canDeleteOrMerge };
 }
 
+type MergeableContactProfile = {
+  favorite: boolean;
+  frequencyDays: number | null;
+  lastSeenAt: Date | null;
+  instagramUrl: string | null;
+  linkedinUrl: string | null;
+};
+
+export function mergeContactProfileValues(source: MergeableContactProfile, target: MergeableContactProfile) {
+  const lastSeenAt = !source.lastSeenAt
+    ? target.lastSeenAt
+    : !target.lastSeenAt || source.lastSeenAt > target.lastSeenAt
+      ? source.lastSeenAt
+      : target.lastSeenAt;
+  return {
+    favorite: source.favorite || target.favorite,
+    frequencyDays: target.frequencyDays ?? source.frequencyDays,
+    lastSeenAt,
+    instagramUrl: target.instagramUrl || source.instagramUrl,
+    linkedinUrl: target.linkedinUrl || source.linkedinUrl,
+  };
+}
+
 const roleOptionByValue = new Map(CONTACT_ROLE_OPTIONS.map((option) => [option.value, option]));
 
 function normalizeId(value: string) {

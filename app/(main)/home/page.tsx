@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react';
 import { FollowUpActionBoard, type HomeFollowUpItem } from '@/components/home/follow-up-action-board';
 import { HotLeadsBoard, type HomeHotLeadItem } from '@/components/home/hot-leads-board';
 import { PreferredPartnerRepChart } from '@/components/home/preferred-partner-rep-chart';
+import { ResurfacedContacts } from '@/components/home/resurfaced-contacts';
 import { WorkspaceHero, WorkspacePage, WorkspaceSection } from '@/components/layout/workspace-page';
 import { requireWorkspaceContext } from '@/lib/auth/workspace';
 import { AUTH_BYPASS_MODE } from '@/lib/config/runtime';
@@ -13,6 +14,8 @@ import { getCalendarSyncHealth } from '@/lib/server/calendar-sync-health';
 import { getNabisSyncFreshness } from '@/lib/server/nabis-sync';
 import { loadTerritoryStores } from '@/lib/server/notion-territory';
 import { preferredPartnerRepBreakdown } from '@/lib/territory/preferred-partner';
+import { buildResurfacedContacts } from '@/lib/follow-up/follow-up-intelligence';
+import { loadLiveNotionContactsWithMeta } from '@/lib/server/notion-live-crm';
 
 function formatTimestamp(value: string | null) {
   if (!value) return 'Not synced yet';
@@ -102,6 +105,34 @@ export default async function HomePage() {
   const [calendarHealth] = await Promise.all([
     showCalendarHealth ? getCalendarSyncHealth(orgId) : Promise.resolve(null),
   ]);
+
+  const [contactSource, contactProfiles, followUpPreference] = await Promise.all([
+    loadLiveNotionContactsWithMeta().catch(() => ({ rows: [] })),
+    prisma.crmContactProfile.findMany({
+      where: { orgId, archivedAt: null },
+      include: { reminders: { where: { status: 'OPEN' }, orderBy: { dueAt: 'asc' }, take: 1 } },
+    }).catch(() => []),
+    prisma.userFollowUpPreference.findUnique({ where: { orgId_clerkUserId: { orgId, clerkUserId: userId } } }).catch(() => null),
+  ]);
+  const contactById = new Map(contactSource.rows.map((contact) => [normalizeStoreKey(contact.id), contact]));
+  const resurfacedContacts = buildResurfacedContacts(contactProfiles.flatMap((profile) => {
+    const contact = contactById.get(normalizeStoreKey(profile.notionContactPageId));
+    if (!contact) return [];
+    const reminder = profile.reminders[0];
+    return [{
+      id: contact.id,
+      name: contact.name,
+      accountName: contact.accountName,
+      email: contact.email,
+      phone: contact.phone,
+      favorite: profile.favorite,
+      frequencyDays: profile.frequencyDays ?? followUpPreference?.resurfaceAfterDays ?? 30,
+      firstMetAt: profile.createdAt.toISOString(),
+      lastMetAt: profile.lastSeenAt?.toISOString() ?? null,
+      reminderNote: reminder?.note ?? null,
+      reminderDueAt: reminder?.dueAt.toISOString() ?? null,
+    }];
+  }));
 
   const supportLinks = buildSupportLinks(role);
 
@@ -359,6 +390,8 @@ export default async function HomePage() {
           />
         </WorkspaceSection>
       ) : null}
+
+      {resurfacedContacts.length > 0 ? <WorkspaceSection eyebrow="Relationship Radar" title="Resurfaced contacts" description="Contacts appear for a specific, visible reason. Review the context, then choose whether to copy the suggestion, open Messages, or open Gmail."><ResurfacedContacts contacts={resurfacedContacts} /></WorkspaceSection> : null}
 
       {hotLeadItems.length > 0 ? (
         <WorkspaceSection

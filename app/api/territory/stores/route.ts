@@ -3,6 +3,7 @@ import { requireTerritoryApiAccess } from '@/lib/auth/territory-access';
 import { loadTerritoryStores, processPendingTerritoryStoreSyncQueue } from '@/lib/server/notion-territory';
 import type { PreferredPartnerFilter } from '@/lib/territory/preferred-partner';
 import type { TerritoryStoresResponse } from '@/lib/territory/types';
+import { prisma } from '@/lib/db/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,7 @@ function readMultiParam(searchParams: URLSearchParams, key: string) {
 }
 
 function buildTerritoryCacheKey(input: {
+  orgId: string;
   statuses: string[];
   reps: string[];
   pppStatuses: string[];
@@ -97,6 +99,7 @@ export async function GET(request: Request) {
   const q = searchParams.get('q')?.trim() ?? '';
   const refresh = searchParams.get('refresh') === '1';
   const cacheKey = buildTerritoryCacheKey({
+    orgId: access.orgId!,
     statuses,
     reps,
     pppStatuses,
@@ -148,6 +151,13 @@ export async function GET(request: Request) {
       query: q,
       refresh,
     });
+    const rankedRetailers = await prisma.nabisRetailer.findMany({
+      where: { orgId: access.orgId!, notionPageId: { not: null } },
+      select: { notionPageId: true, lifetimeRevenue: true },
+      orderBy: [{ lifetimeRevenue: 'desc' }, { name: 'asc' }],
+    }).catch(() => []);
+    const rankByPageId = new Map(rankedRetailers.map((retailer, index) => [retailer.notionPageId!.replace(/-/g, '').toLowerCase(), index + 1]));
+    payload.stores = payload.stores.map((store) => ({ ...store, nabisRank: rankByPageId.get(store.notionPageId.replace(/-/g, '').toLowerCase()) ?? null }));
 
     console.log('territory_stores_ok', {
       recordsRead: payload.meta.recordsRead,

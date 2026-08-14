@@ -12,6 +12,7 @@ import { AdminOpsPanel } from '@/components/settings/admin-ops-panel';
 import { NabisSyncAdminPanel } from '@/components/settings/nabis-sync-admin-panel';
 import { GoogleUsageBudgetCard } from '@/components/territory/google-usage-budget-card';
 import { GmailConnectionCard } from '@/components/settings/gmail-connection-card';
+import { FollowUpPreferencesCard } from '@/components/settings/follow-up-preferences-card';
 import { Button, Input, Textarea } from '@/components/ui';
 import { RoleDisplayNames } from '@/lib/types/rbac';
 
@@ -167,6 +168,11 @@ export function SettingsMobile({ embedded = false }: { embedded?: boolean }) {
           id: 'connected-services',
           label: 'Connected Services',
           description: 'Connect your individual Gmail account and inspect its status.',
+        },
+        {
+          id: 'follow-up-defaults',
+          label: 'Follow-Ups & Debrief',
+          description: 'Default next-touch dates and your daily briefing delivery.',
         },
         ...(canViewTeamActivity
           ? [
@@ -670,6 +676,10 @@ export function SettingsMobile({ embedded = false }: { embedded?: boolean }) {
           />
           <GmailConnectionCard />
         </WorkspacePanel>
+      </section>
+
+      <section id="follow-up-defaults" className="scroll-mt-28">
+        <WorkspacePanel className="space-y-4"><WorkspacePanelHeader eyebrow="Follow-Ups & Debrief" title="Set the rhythm once" description="Prefill the right next-touch date and choose whether the app should email your daily action list." /><FollowUpPreferencesCard /></WorkspacePanel>
       </section>
 
       {canViewTeamActivity ? (

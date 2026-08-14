@@ -220,6 +220,8 @@ model OrganizationWorkspace {
   crmContactReminders       CrmContactReminder[]
   crmContactActivities      CrmContactActivity[]
   gmailConnections          GmailConnection[]
+  followUpPreferences       UserFollowUpPreference[]
+  dailyBriefingDeliveries   DailyBriefingDelivery[]
   tags                      Tag[]
   pipelines                 Pipeline[]
   opportunities             Opportunity[]
@@ -544,6 +546,42 @@ model GmailConnection {
 
   @@unique([orgId, clerkUserId])
   @@index([orgId, mailboxEmail])
+}
+
+model UserFollowUpPreference {
+  id                     String                @id @default(cuid())
+  orgId                  String
+  org                    OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  clerkUserId            String
+  defaultEmailDays       Int                   @default(7)
+  defaultTextDays        Int                   @default(3)
+  defaultCallDays        Int                   @default(1)
+  resurfaceAfterDays     Int                   @default(30)
+  dailyBriefingEnabled   Boolean               @default(false)
+  dailyBriefingTime      String                @default("08:00")
+  timezone               String                @default("America/New_York")
+  briefingRecipientEmail String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  @@unique([orgId, clerkUserId])
+}
+
+model DailyBriefingDelivery {
+  id             String                @id @default(cuid())
+  orgId          String
+  org            OrganizationWorkspace @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  clerkUserId    String
+  localDate      String
+  recipientEmail String
+  status         IntegrationSyncStatus @default(RUNNING)
+  sentAt         DateTime?
+  lastError      String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([orgId, clerkUserId, localDate])
+  @@index([orgId, localDate, status])
 }
 
 model Tag {

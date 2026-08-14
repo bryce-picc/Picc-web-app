@@ -1,45 +1,48 @@
-# Session: Issue 163 Gmail Contact Activity
+# Session: Issue 163 Follow-up Intelligence and Daily Briefing
 
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/163
-- Branch: `codex/163-gmail-contact-activity`
-- Base branch: `main` after the approved contact-profile release merged.
-- PR: https://github.com/brycejohnson1417/Picc-web-app/pull/169
+- Branch: `codex/163-followup-intelligence`
+- Base branch: `main` after the approved Gmail release merged.
+- PR: https://github.com/brycejohnson1417/Picc-web-app/pull/170
 
 ## Scope
 
-- Add per-rep read-only Gmail OAuth connection and explicit disconnect controls in Settings.
-- Match Gmail activity and suggested contacts to CRM contacts through explicit provider boundaries.
-- Show email activity and Gmail thread links on contact profiles.
-- Offer reviewable suggested contacts with prefilled quick add.
+- Add user-configurable follow-up defaults and daily briefing preferences in Settings.
+- Add deterministic, user-scoped briefing generation and scheduled email delivery.
+- Add a Home relationship-resurfacing workspace with transparent reasons and explicit next actions.
+- Replace account metric placeholders only where a trustworthy current source exists.
 
 ## Out of scope
 
 - Device call/text history ingestion.
-- Daily scheduled briefing and follow-up intelligence, which remain in the next release.
-- Production mailbox or CRM mutations during verification.
+- Generated prose or autonomous outbound sales messages.
 - Changes to `/Users/brycejohnson/Code/map-app`.
+- Invented Pay Days Avg values without a trustworthy source.
 
-## Constraints
+## Architecture and safety
 
-- Preserve tenant/user scoping, least-privilege Gmail scopes, encrypted refresh tokens, and explicit disconnect behavior.
-- Keep CRM creation behind the existing guarded contact workflow and overwrite warnings.
-- Use RED-first deterministic tests and real mobile browser verification.
+- Keep ranking and briefing selection deterministic and testable; no LLM dependency.
+- Scope preferences, reminders, mailbox activity, and delivery to the authenticated user and tenant.
+- Use an authenticated cron route, an hourly GitHub Actions trigger, per-user local send time, delivery idempotency, and the existing email adapter.
+- Never invent unavailable account metrics; expose only computed values from existing read models.
 
-## Ownership and overlap
+## Validation
 
-- Owned paths: focused mailbox adapter/routes/UI, contact timeline integration, tests, one scoped migration, and `SESSION.md`.
-- Rebased onto merged PR #168 and current `main`; the hardened contact lifecycle behavior remains authoritative.
-- No production secrets or data are changed during local verification.
+- Pre-rebase `npm run verify` passed (42 test files / 176 tests, lint, typecheck, Prisma validation, and production build).
+- Pre-rebase full Playwright suite passed (29 tests); focused contact workspace suite passed (6 tests).
+- Current-main verification will be rerun before merge.
+- Manual mobile browser verification covered Home resurfacing reasons/actions, clipboard copy confirmation, Settings defaults/debrief controls, compact sync disclosure, priority account fields, and unobstructed letter rail.
 
-## Validation evidence
+## Browser evidence
 
-- Current-main `npm run verify` passed: lint, typecheck, 42 Vitest files / 193 tests, Prisma validation, and production build.
-- Full browser suite passed on an isolated port: `PICC_AGENT_DEV_PORT=3169 npx playwright test --workers=1` (31 tests).
-- Focused mobile browser flows passed for suggested-contact review and prefilled quick add, connected/disconnected Settings states, explicit disconnect confirmation, and contact email-thread links.
+- `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/resurfaced-contacts-mobile.png`
+- `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/follow-up-settings-mobile.png`
+- `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/daily-debrief-settings-mobile.png`
+- `/Users/brycejohnson/.codex/visualizations/2026/08/13/019ffc03-da13-7281-ae9a-5216d1b9437f/accounts-mobile-priority-fields.png`
 
 ## Remaining deployment boundary
 
-- The scoped migration and production OAuth secrets/redirect configuration were approved for release.
-- Production OAuth consent and thread readback require configured Google OAuth values and a rep completing the browser consent flow.
+- The scoped migration, cron secret, and outbound email configuration were approved for release.
+- Production delivery proof depends on the required provider and scheduler secrets being configured.

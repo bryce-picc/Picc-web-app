@@ -62,6 +62,7 @@ export interface TerritoryStorePin {
   city?: string | null;
   state?: string | null;
   daysOverdue?: number | null;
+  nabisRank?: number | null;
   phoneNumber?: string | null;
   email?: string | null;
   vendorDayStatus?: string | null;

@@ -366,7 +366,7 @@ export function AccountsMobile() {
                         </div>
                         <div className="pl-2">
                           <dt className="text-[#7a8492]">Nabis rank</dt>
-                          <dd className="mt-0.5 font-semibold text-[#667183]">Unavailable</dd>
+                          <dd className="mt-0.5 font-semibold text-[#344052]">{store.nabisRank ? `#${store.nabisRank}` : 'Unavailable'}</dd>
                         </div>
                       </dl>
                     </button>

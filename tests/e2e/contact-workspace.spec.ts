@@ -158,6 +158,9 @@ test('accounts stay dense, keep the alphabet rail clear, and create a follow-up'
 });
 
 test('account details exposes direct actions and prompts for a follow-up after Gmail opens', async ({ page }) => {
+  await page.route('**/api/settings/follow-up-preferences', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ preference: { defaultEmailDays: 11, defaultTextDays: 4, defaultCallDays: 2 } }) });
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/accounts');
   await page.getByRole('button', { name: /Harbor House.*Customer.*Mina Torres/s }).click();
@@ -184,6 +187,8 @@ test('account details exposes direct actions and prompts for a follow-up after G
 
   await expect(page.getByRole('heading', { name: 'Set follow-up?' })).toBeVisible();
   await expect(page.getByText('Gmail opened for Mara Vega.')).toBeVisible();
+  const expectedDefaultDate = await page.evaluate(() => { const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() + 11); return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'); });
+  await expect(page.getByLabel('Follow-up date')).toHaveValue(expectedDefaultDate);
   if (process.env.PICC_EVIDENCE_DIR) {
     await page.screenshot({ path: `${process.env.PICC_EVIDENCE_DIR}/account-contact-actions-follow-up.png`, fullPage: true });
   }
@@ -299,4 +304,27 @@ test('lets the signed-in rep inspect and explicitly disconnect their Gmail', asy
   await page.getByRole('button', { name: 'Confirm disconnect' }).click();
   await expect(page.getByText('Not connected')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Connect my Gmail' })).toBeVisible();
+});
+
+test('saves action defaults and can explicitly send a daily debrief now', async ({ page }) => {
+  let preference = { defaultEmailDays: 7, defaultTextDays: 3, defaultCallDays: 1, resurfaceAfterDays: 30, dailyBriefingEnabled: false, dailyBriefingTime: '08:00', timezone: 'America/New_York', briefingRecipientEmail: 'rep@picc.co' };
+  let savedPayload: typeof preference | null = null;
+  await page.route('**/api/settings/follow-up-preferences', async (route) => {
+    if (route.request().method() === 'PATCH') {
+      savedPayload = route.request().postDataJSON() as typeof preference;
+      preference = savedPayload;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ preference }) });
+  });
+  await page.route('**/api/settings/follow-up-preferences/send-preview', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'sent', recipientEmail: 'rep@picc.co' }) });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/settings#follow-up-defaults');
+  await page.getByLabel('After email').fill('9');
+  await page.getByLabel('Daily debrief email').check();
+  await page.getByRole('button', { name: 'Send debrief now' }).click();
+  await expect(page.getByText('Daily debrief sent')).toBeVisible();
+  expect(savedPayload).toMatchObject({ defaultEmailDays: 9, dailyBriefingEnabled: true, briefingRecipientEmail: 'rep@picc.co' });
 });

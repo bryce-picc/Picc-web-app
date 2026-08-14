@@ -2,11 +2,12 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { CalendarDays, Loader2, Mail, MessageSquare, Phone, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { buildContactActionHref, type ContactActionKind } from '@/lib/contacts/contact-actions';
 import { buildCommunicationFollowUpPayload } from '@/lib/contacts/contact-follow-up';
 import { cn } from '@/lib/utils';
+import { defaultFollowUpDate, type FollowUpDefaults } from '@/lib/follow-up/follow-up-intelligence';
 
 export type ContactQuickActionContact = {
   id: string;
@@ -34,6 +35,20 @@ const actionMeta = {
   call: { label: 'Call', launchedLabel: 'Phone', Icon: Phone },
 } satisfies Record<ContactActionKind, { label: string; launchedLabel: string; Icon: typeof Mail }>;
 
+const fallbackDefaults: FollowUpDefaults = { defaultEmailDays: 7, defaultTextDays: 3, defaultCallDays: 1 };
+let followUpDefaultsPromise: Promise<FollowUpDefaults> | null = null;
+
+function loadFollowUpDefaults() {
+  followUpDefaultsPromise ??= fetch('/api/settings/follow-up-preferences', { cache: 'no-store' })
+    .then(async (response) => {
+      if (!response.ok) return fallbackDefaults;
+      const payload = (await response.json()) as { preference?: FollowUpDefaults };
+      return payload.preference ?? fallbackDefaults;
+    })
+    .catch(() => fallbackDefaults);
+  return followUpDefaultsPromise;
+}
+
 export function ContactQuickActions({
   contact,
   accounts,
@@ -53,6 +68,18 @@ export function ContactQuickActions({
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [defaults, setDefaults] = useState<FollowUpDefaults>(fallbackDefaults);
+
+  useEffect(() => {
+    void loadFollowUpDefaults().then(setDefaults);
+    const handlePreferenceChange = (event: Event) => {
+      const next = (event as CustomEvent<FollowUpDefaults>).detail;
+      followUpDefaultsPromise = Promise.resolve(next);
+      setDefaults(next);
+    };
+    window.addEventListener('picc:follow-up-preferences', handlePreferenceChange);
+    return () => window.removeEventListener('picc:follow-up-preferences', handlePreferenceChange);
+  }, []);
 
   const links = useMemo(
     () =>
@@ -148,6 +175,7 @@ export function ContactQuickActions({
                   .catch(() => undefined);
               }
               setPendingAction(kind);
+              setFollowUpDate(defaultFollowUpDate(kind, defaults));
               setError(null);
             }}
           >

@@ -6,6 +6,7 @@ import { AlertTriangle, Database, History, RefreshCw, Store, TimerReset } from '
 import { toast } from 'sonner';
 import { Badge, Button } from '@/components/ui';
 import { WorkspacePanel, WorkspacePanelHeader } from '@/components/layout/workspace-page';
+import { NabisIdentityReviewPanel } from '@/components/settings/nabis-identity-review-panel';
 
 type SyncStatus = 'IDLE' | 'RUNNING' | 'SUCCESS' | 'ERROR';
 
@@ -14,6 +15,7 @@ type SyncModule = {
   status: SyncStatus;
   updatedAt: string | null;
   lastSuccessfulSyncAt: string | null;
+  lastAttemptAt: string | null;
   error: string | null;
   rateLimited: boolean;
   retryAfterMs: number | null;
@@ -255,7 +257,7 @@ export function NabisSyncAdminPanel() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[15px] font-semibold text-[#1d1f23]">{shortModuleLabel(module.module)}</p>
-                    <p className="mt-1 text-[12px] text-[#5c6674]">Updated: {formatDateTime(module.updatedAt)}</p>
+                    <p className="mt-1 text-[12px] text-[#5c6674]">Last attempt: {formatDateTime(module.lastAttemptAt)}</p>
                   </div>
                   <Badge variant={statusBadgeVariant(module.status)}>{module.status.toLowerCase()}</Badge>
                 </div>
@@ -281,6 +283,8 @@ export function NabisSyncAdminPanel() {
               </div>
             ))}
           </div>
+
+          <NabisIdentityReviewPanel />
 
           <label className="flex items-start gap-3 rounded-2xl border border-[#d6dae2] bg-[#f7f9fc] px-4 py-4">
             <input

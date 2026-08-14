@@ -263,7 +263,7 @@ export async function deliverNabisIdentityConflictEmail(
   });
 }
 
-function parseConflictMetadata(value: Prisma.JsonValue): NabisIdentityConflictMetadata | null {
+export function parseNabisIdentityConflictMetadata(value: Prisma.JsonValue): NabisIdentityConflictMetadata | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
@@ -279,7 +279,7 @@ function parseConflictMetadata(value: Prisma.JsonValue): NabisIdentityConflictMe
 }
 
 function fromPrismaNotification(row: PrismaNotificationRow): IdentityConflictNotification | null {
-  const metadata = parseConflictMetadata(row.metadata);
+  const metadata = parseNabisIdentityConflictMetadata(row.metadata);
   if (!metadata) return null;
   return {
     id: row.id,
@@ -397,4 +397,18 @@ export async function persistNabisIdentityConflict(
         });
       }),
   });
+}
+
+export async function retryNabisIdentityConflictEmail(orgId: string, notificationId: string) {
+  const notification = (await listNabisIdentityConflicts(orgId)).find((item) => item.id === notificationId);
+  if (!notification || notification.metadata.status !== 'OPEN') {
+    throw new Error('Open Nabis identity conflict not found.');
+  }
+  const recipient = await resolveNabisIdentityConflictRecipient(orgId);
+  await deliverNabisIdentityConflictEmail(notification, {
+    resolveRecipient: async () => ({ email: recipient.email, enabled: recipient.emailEnabled }),
+    send: sendTransactionalEmail,
+    update: updateConflictEmailState,
+  });
+  return (await listNabisIdentityConflicts(orgId)).find((item) => item.id === notificationId) ?? notification;
 }

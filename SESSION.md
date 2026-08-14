@@ -30,9 +30,8 @@
 
 ## Validation
 
-- Pre-rebase `npm run verify` passed (42 test files / 176 tests, lint, typecheck, Prisma validation, and production build).
-- Pre-rebase full Playwright suite passed (29 tests); focused contact workspace suite passed (6 tests).
-- Current-main verification will be rerun before merge.
+- Current-main `npm run verify` passed: lint, typecheck, 46 Vitest files / 202 tests, Prisma validation, and production build.
+- Full browser suite passed on an isolated port: `PICC_AGENT_DEV_PORT=3170 npx playwright test --workers=1` (32 tests).
 - Manual mobile browser verification covered Home resurfacing reasons/actions, clipboard copy confirmation, Settings defaults/debrief controls, compact sync disclosure, priority account fields, and unobstructed letter rail.
 
 ## Browser evidence

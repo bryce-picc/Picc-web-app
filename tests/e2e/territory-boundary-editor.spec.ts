@@ -172,17 +172,27 @@ test('keeps map tap drawing active in the minimized territory drawing bar', asyn
 
   const name = page.getByLabel('Name');
   const description = page.getByLabel('Description');
+  const scrollBody = page.getByTestId('territory-boundary-editor-scroll');
+  const minimize = page.getByRole('button', { name: 'Minimize territory editor' });
   await expect(name).toHaveValue('Queens East');
   await expect(description).toHaveValue('Reported short-viewport regression fixture');
   await page.getByRole('button', { name: 'Add Points by Click' }).click();
-  await page.getByRole('button', { name: 'Minimize territory editor' }).click();
+  await scrollBody.evaluate((element) => {
+    element.scrollTop = 200;
+  });
+  const scrollTopBeforeMinimize = await scrollBody.evaluate((element) => element.scrollTop);
+  expect(scrollTopBeforeMinimize).toBeGreaterThan(0);
+  await minimize.click();
 
-  await expect(page.getByTestId('territory-boundary-editor-scroll')).toBeHidden();
+  await expect(scrollBody).toBeHidden();
   await expect(page.getByRole('button', { name: 'Save Boundary' })).toBeHidden();
   const compactBar = page.getByTestId('territory-boundary-editor-minimized');
+  const compactStatus = page.getByRole('status');
+  const expand = page.getByRole('button', { name: 'Expand territory editor' });
   const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
-  await expect(compactBar).toContainText('Drawing');
-  await expect(compactBar).toContainText('8 points');
+  await expect(compactStatus).toContainText('Drawing');
+  await expect(compactStatus).toContainText('8 points');
+  await expect(expand).toBeFocused();
   const [compactBox, navigationBox] = await Promise.all([compactBar.boundingBox(), navigation.boundingBox()]);
   expect(compactBox).not.toBeNull();
   expect(navigationBox).not.toBeNull();
@@ -192,12 +202,14 @@ test('keeps map tap drawing active in the minimized territory drawing bar', asyn
   const map = page.locator('.gm-style').first();
   await expect(map).toBeVisible();
   await map.click({ position: { x: 120, y: 280 } });
-  await expect(compactBar).toContainText('9 points');
+  await expect(compactStatus).toContainText('9 points');
   await page.screenshot({ path: testInfo.outputPath('territory-minimized-mobile.png') });
   await page.getByRole('button', { name: 'Undo point' }).click();
-  await expect(compactBar).toContainText('8 points');
+  await expect(compactStatus).toContainText('8 points');
 
-  await page.getByRole('button', { name: 'Expand territory editor' }).click();
+  await expand.click();
+  await expect(minimize).toBeFocused();
+  await expect.poll(() => scrollBody.evaluate((element) => element.scrollTop)).toBe(scrollTopBeforeMinimize);
   await expect(name).toHaveValue('Queens East');
   await expect(description).toHaveValue('Reported short-viewport regression fixture');
   await expect(page.getByRole('button', { name: 'Stop Adding Points' })).toBeVisible();

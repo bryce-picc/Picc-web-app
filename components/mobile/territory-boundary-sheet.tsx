@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Eye, EyeOff, Home, Layers3, Loader2, Pencil, Plus, Save, Search, Trash2, Undo2, X } from 'lucide-react';
 import type { TerritoryBoundary, TerritoryMarker } from '@/lib/territory/types';
 import { cn } from '@/lib/utils';
@@ -280,12 +280,33 @@ export function TerritoryBoundaryEditor({
   onSave,
 }: TerritoryBoundaryEditorProps) {
   const [minimized, setMinimized] = useState(false);
+  const scrollBodyRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollTopRef = useRef(0);
+  const minimizeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const expandButtonRef = useRef<HTMLButtonElement | null>(null);
+  const focusTargetRef = useRef<'minimized' | 'expanded' | null>(null);
 
   useEffect(() => {
     if (!open) {
       setMinimized(false);
+      focusTargetRef.current = null;
+      return;
     }
-  }, [open]);
+
+    if (minimized && focusTargetRef.current === 'minimized') {
+      expandButtonRef.current?.focus();
+      focusTargetRef.current = null;
+      return;
+    }
+
+    if (!minimized && focusTargetRef.current === 'expanded') {
+      if (scrollBodyRef.current) {
+        scrollBodyRef.current.scrollTop = savedScrollTopRef.current;
+      }
+      minimizeButtonRef.current?.focus();
+      focusTargetRef.current = null;
+    }
+  }, [minimized, open]);
 
   if (!open || !boundary) {
     return null;
@@ -300,7 +321,7 @@ export function TerritoryBoundaryEditor({
           className="pointer-events-auto mx-auto flex min-h-[60px] max-w-[720px] items-center gap-2 rounded-2xl border border-[#d8b0a5] bg-[#fffaf8] p-2 shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
           data-testid="territory-boundary-editor-minimized"
         >
-          <p className="min-w-0 flex-1 truncate px-2 text-[13px] font-semibold text-[#23262d]">
+          <p className="min-w-0 flex-1 truncate px-2 text-[13px] font-semibold text-[#23262d]" role="status" aria-live="polite" aria-atomic="true">
             {drawingMode ? 'Drawing' : 'Editing'} · {boundary.coordinates.length} point{boundary.coordinates.length === 1 ? '' : 's'}
           </p>
           <button
@@ -313,8 +334,12 @@ export function TerritoryBoundaryEditor({
             <Undo2 className="h-4 w-4" />
           </button>
           <button
+            ref={expandButtonRef}
             type="button"
-            onClick={() => setMinimized(false)}
+            onClick={() => {
+              focusTargetRef.current = 'expanded';
+              setMinimized(false);
+            }}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-[#cd3814] text-white"
             aria-label="Expand territory editor"
           >
@@ -339,8 +364,13 @@ export function TerritoryBoundaryEditor({
           </div>
           <div className="ml-2 flex shrink-0 items-center gap-1">
             <button
+              ref={minimizeButtonRef}
               type="button"
-              onClick={() => setMinimized(true)}
+              onClick={() => {
+                savedScrollTopRef.current = scrollBodyRef.current?.scrollTop ?? 0;
+                focusTargetRef.current = 'minimized';
+                setMinimized(true);
+              }}
               className="grid h-9 w-9 place-items-center rounded-lg text-[#7a5e56] hover:bg-[#f6e3de]"
               aria-label="Minimize territory editor"
             >
@@ -352,7 +382,7 @@ export function TerritoryBoundaryEditor({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto" data-testid="territory-boundary-editor-scroll">
+        <div ref={scrollBodyRef} className="min-h-0 flex-1 overflow-y-auto" data-testid="territory-boundary-editor-scroll">
           <div className="grid gap-3 px-4 py-4 md:grid-cols-1">
             <label className="block">
             <span className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#7b7e87]">Name</span>

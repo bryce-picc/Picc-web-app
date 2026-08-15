@@ -3,8 +3,8 @@
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/175
-- Branch: `codex/175-safari-territory-header`
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/176
+- Branch: `codex/175-safari-retained-scroll`
+- First PR: https://github.com/brycejohnson1417/Picc-web-app/pull/176 (merged; live Safari proof exposed a remaining sticky-header issue)
 
 ## Scope
 
@@ -38,6 +38,15 @@
 ## Current state
 
 RED reproduced the asymmetric desktop shell contract: the AppShell header started at `y=0` even though the shell height already reserved 24px. The fix moves that allowance into symmetric desktop `py-3` and lets the inner shell fill the padded content box; mobile remains edge-to-edge.
+
+Production Safari verification after PR #176 showed that WebKit still composited the AppShell's sticky frame header underneath browser chrome while leaving its space in the document flow. Follow-up RED coverage now requires the frame header to remain non-sticky because `main` already owns page scrolling.
+
+Follow-up validation:
+
+- RED: both focused regressions rejected the AppShell header's computed `position: sticky`.
+- GREEN: both Safari-sized viewport regressions pass with the frame header in normal flow.
+- `npm run verify`: passed lint, typecheck, 46 Vitest files / 202 tests, Prisma validation, and production build.
+- Full E2E: 35 passed serially.
 
 - Focused Safari viewport regressions: 2 passed at 1226x768 and zoom-equivalent 981x614.
 - Complete territory regression set: 12 passed serially. One parallel subway reload timed out once, then passed 4/4 in isolation and 12/12 in the serial territory run.

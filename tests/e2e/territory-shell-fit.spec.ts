@@ -59,6 +59,12 @@ test('keeps the complete territory shell below Safari browser chrome', async ({ 
   await expect(map).toBeVisible();
   await expect(navigation).toBeVisible();
 
+  // Safari can pin a nested sticky header to the browser window rather than the
+  // app's clipped viewport, placing it underneath the tab/favorites chrome.
+  // The shell already owns scrolling in <main>, so its frame header must stay
+  // in normal flow.
+  await expect(appHeader).toHaveCSS('position', 'static');
+
   const [headerBox, mapTabBox, listTabBox, mapBox, navigationBox] = await Promise.all([
     appHeader.boundingBox(),
     mapTab.boundingBox(),
@@ -96,6 +102,7 @@ test('keeps the territory shell visible at a zoom-equivalent short desktop viewp
   await expect(mapTab).toBeVisible();
   await expect(listTab).toBeVisible();
   await expect(navigation).toBeVisible();
+  await expect(appHeader).toHaveCSS('position', 'static');
 
   const [headerBox, mapTabBox, navigationBox] = await Promise.all([
     appHeader.boundingBox(),

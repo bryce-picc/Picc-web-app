@@ -77,7 +77,7 @@ export function AppShell({
       <div className="h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_34%),linear-gradient(180deg,#d7d8dc_0%,#c9cacf_100%)] px-0 md:px-3 md:py-3 lg:px-5">
         {commandMounted ? <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} /> : null}
         <div className="mx-auto flex h-full max-w-[var(--app-shell-max)] flex-col overflow-hidden bg-[#e6e6e9] shadow-[0_0_0_1px_rgba(0,0,0,0.12)] md:rounded-[28px] md:shadow-[0_20px_60px_rgba(31,35,43,0.18)]">
-          <header className="sticky top-0 z-[3000] flex items-center justify-between gap-3 border-b border-[#d7dde7] bg-[linear-gradient(180deg,rgba(249,251,255,0.96)_0%,rgba(241,245,250,0.94)_100%)] px-3 py-2 text-[#1f232b] backdrop-blur-xl">
+          <header className="z-[3000] flex items-center justify-between gap-3 border-b border-[#d7dde7] bg-[linear-gradient(180deg,rgba(249,251,255,0.96)_0%,rgba(241,245,250,0.94)_100%)] px-3 py-2 text-[#1f232b] backdrop-blur-xl">
             <div className="flex items-center gap-2">
               <div className="rounded-2xl border border-[#d7dde7] bg-white px-3 py-2 shadow-[0_8px_24px_rgba(31,35,43,0.06)]">
                 <p className="text-[13px] font-semibold tracking-[0.01em] text-[#18212d]">PiCC New York</p>

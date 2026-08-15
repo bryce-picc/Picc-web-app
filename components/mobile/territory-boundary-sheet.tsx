@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, Eye, EyeOff, Home, Layers3, Loader2, Pencil, Plus, Save, Search, Trash2, Undo2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Check, ChevronDown, ChevronUp, Eye, EyeOff, Home, Layers3, Loader2, Pencil, Plus, Save, Search, Trash2, Undo2, X } from 'lucide-react';
 import type { TerritoryBoundary, TerritoryMarker } from '@/lib/territory/types';
 import { cn } from '@/lib/utils';
 
@@ -278,11 +279,76 @@ export function TerritoryBoundaryEditor({
   onFinishDrawing,
   onSave,
 }: TerritoryBoundaryEditorProps) {
+  const [minimized, setMinimized] = useState(false);
+  const scrollBodyRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollTopRef = useRef(0);
+  const minimizeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const expandButtonRef = useRef<HTMLButtonElement | null>(null);
+  const focusTargetRef = useRef<'minimized' | 'expanded' | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setMinimized(false);
+      focusTargetRef.current = null;
+      return;
+    }
+
+    if (minimized && focusTargetRef.current === 'minimized') {
+      expandButtonRef.current?.focus();
+      focusTargetRef.current = null;
+      return;
+    }
+
+    if (!minimized && focusTargetRef.current === 'expanded') {
+      if (scrollBodyRef.current) {
+        scrollBodyRef.current.scrollTop = savedScrollTopRef.current;
+      }
+      minimizeButtonRef.current?.focus();
+      focusTargetRef.current = null;
+    }
+  }, [minimized, open]);
+
   if (!open || !boundary) {
     return null;
   }
 
   const isNewBoundary = !boundary.id;
+
+  if (minimized) {
+    return (
+      <div className="pointer-events-none fixed inset-x-0 bottom-[max(var(--picc-bottom-nav-clearance),calc(var(--picc-bottom-nav-height)_+_12px))] z-[5300] px-3 md:inset-x-auto md:right-4 md:w-[380px] md:max-w-[calc(100vw-32px)] md:px-0 lg:w-[420px]">
+        <div
+          className="pointer-events-auto mx-auto flex min-h-[60px] max-w-[720px] items-center gap-2 rounded-2xl border border-[#d8b0a5] bg-[#fffaf8] p-2 shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
+          data-testid="territory-boundary-editor-minimized"
+        >
+          <p className="min-w-0 flex-1 truncate px-2 text-[13px] font-semibold text-[#23262d]" role="status" aria-live="polite" aria-atomic="true">
+            {drawingMode ? 'Drawing' : 'Editing'} · {boundary.coordinates.length} point{boundary.coordinates.length === 1 ? '' : 's'}
+          </p>
+          <button
+            type="button"
+            onClick={onUndoLastPoint}
+            disabled={boundary.coordinates.length === 0}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-[#c8c9cf] bg-white text-[#3e4046] disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Undo point"
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+          <button
+            ref={expandButtonRef}
+            type="button"
+            onClick={() => {
+              focusTargetRef.current = 'expanded';
+              setMinimized(false);
+            }}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-[#cd3814] text-white"
+            aria-label="Expand territory editor"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-[max(var(--picc-bottom-nav-clearance),calc(var(--picc-bottom-nav-height)_+_12px))] top-[clamp(0px,calc(30dvh_-_117px),96px)] z-[5300] px-3 md:inset-x-auto md:right-4 md:w-[380px] md:max-w-[calc(100vw-32px)] md:px-0 lg:w-[420px]">
@@ -296,12 +362,27 @@ export function TerritoryBoundaryEditor({
                 : 'Drag corners, edge handles, or the whole shape. Click a border segment to insert a point without distorting the territory.'}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg text-[#7a5e56] hover:bg-[#f6e3de]" aria-label="Close territory editor">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="ml-2 flex shrink-0 items-center gap-1">
+            <button
+              ref={minimizeButtonRef}
+              type="button"
+              onClick={() => {
+                savedScrollTopRef.current = scrollBodyRef.current?.scrollTop ?? 0;
+                focusTargetRef.current = 'minimized';
+                setMinimized(true);
+              }}
+              className="grid h-9 w-9 place-items-center rounded-lg text-[#7a5e56] hover:bg-[#f6e3de]"
+              aria-label="Minimize territory editor"
+            >
+              <ChevronDown className="h-5 w-5" />
+            </button>
+            <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg text-[#7a5e56] hover:bg-[#f6e3de]" aria-label="Close territory editor">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto" data-testid="territory-boundary-editor-scroll">
+        <div ref={scrollBodyRef} className="min-h-0 flex-1 overflow-y-auto" data-testid="territory-boundary-editor-scroll">
           <div className="grid gap-3 px-4 py-4 md:grid-cols-1">
             <label className="block">
             <span className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#7b7e87]">Name</span>

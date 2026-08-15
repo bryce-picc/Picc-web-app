@@ -6,6 +6,7 @@
 - Draft PR: pending
 - Branch: `codex/173-territory-editor-minimize`
 - Design: `docs/superpowers/specs/2026-08-14-territory-editor-minimize-design.md`
+- Plan: `docs/superpowers/plans/2026-08-15-territory-editor-minimize.md`
 
 ## Scope
 
@@ -39,4 +40,4 @@
 
 ## Current state
 
-Issue and design branch created. Written design is pending user review; implementation has not started.
+Written design approved by the user. Implementation plan is ready; production code has not been changed.

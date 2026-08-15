@@ -4,7 +4,7 @@
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/175
 - Branch: `codex/175-safari-territory-header`
-- Draft PR: pending initial session commit
+- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/176
 
 ## Scope
 
@@ -37,4 +37,13 @@
 
 ## Current state
 
-Production Safari evidence confirms the profile header is present in the accessibility tree but visually clipped above the Map/List switch. Source diagnosis is in progress; no non-test source file has been edited.
+RED reproduced the asymmetric desktop shell contract: the AppShell header started at `y=0` even though the shell height already reserved 24px. The fix moves that allowance into symmetric desktop `py-3` and lets the inner shell fill the padded content box; mobile remains edge-to-edge.
+
+- Focused Safari viewport regressions: 2 passed at 1226x768 and zoom-equivalent 981x614.
+- Complete territory regression set: 12 passed serially. One parallel subway reload timed out once, then passed 4/4 in isolation and 12/12 in the serial territory run.
+- `npm run verify`: passed lint, typecheck, 46 Vitest files / 202 tests, Prisma validation, and production build.
+- Full E2E: 35 passed serially on a clean Playwright-owned server.
+- Real-browser Map to List to Map interaction passed with current local territory data.
+- Browser bounds at 981x614: header top 12, header bottom 66.5, primary navigation top 518, navigation bottom 614, `scrollY` 0.
+- Mobile bounds at 390x844: header top 0, navigation bottom 844, `scrollY` 0.
+- Screenshot proof: `test-results/territory-shell-fit-keeps--aa8a8-below-Safari-browser-chrome-chromium/territory-shell-safari-desktop.png` and `test-results/territory-shell-fit-keeps--8d94a-lent-short-desktop-viewport-chromium/territory-shell-safari-zoom-equivalent.png`.

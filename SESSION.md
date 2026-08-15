@@ -40,4 +40,4 @@
 
 ## Current state
 
-Written design approved by the user. Implementation plan is ready; production code has not been changed.
+RED failed waiting for the missing `Minimize territory editor` control. GREEN proves a real Google Map tap changes the minimized counter from 8 to 9 points, compact Undo returns it to 8, and Expand restores the full draft and drawing mode. The focused territory suite passes 6 tests; `npm run verify` passes with 159 unit tests and a production build; all 29 Playwright tests pass. Mobile proof: `test-results/territory-boundary-editor--373e4-mized-territory-drawing-bar-chromium/territory-minimized-mobile.png`. PR checks, merge, and production proof remain.

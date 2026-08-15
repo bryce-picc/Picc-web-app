@@ -166,6 +166,46 @@ test('keeps Finish Shape and Clear reachable while the mobile point list scrolls
   await expect(page.getByText('0 points captured')).toBeVisible();
 });
 
+test('keeps map tap drawing active in the minimized territory drawing bar', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openPopulatedBoundaryEditor(page);
+
+  const name = page.getByLabel('Name');
+  const description = page.getByLabel('Description');
+  await expect(name).toHaveValue('Queens East');
+  await expect(description).toHaveValue('Reported short-viewport regression fixture');
+  await page.getByRole('button', { name: 'Add Points by Click' }).click();
+  await page.getByRole('button', { name: 'Minimize territory editor' }).click();
+
+  await expect(page.getByTestId('territory-boundary-editor-scroll')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Save Boundary' })).toBeHidden();
+  const compactBar = page.getByTestId('territory-boundary-editor-minimized');
+  const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
+  await expect(compactBar).toContainText('Drawing');
+  await expect(compactBar).toContainText('8 points');
+  const [compactBox, navigationBox] = await Promise.all([compactBar.boundingBox(), navigation.boundingBox()]);
+  expect(compactBox).not.toBeNull();
+  expect(navigationBox).not.toBeNull();
+  expect(compactBox!.height).toBeLessThan(72);
+  expect(compactBox!.y + compactBox!.height).toBeLessThanOrEqual(navigationBox!.y);
+
+  const map = page.locator('.gm-style').first();
+  await expect(map).toBeVisible();
+  await map.click({ position: { x: 120, y: 280 } });
+  await expect(compactBar).toContainText('9 points');
+  await page.screenshot({ path: testInfo.outputPath('territory-minimized-mobile.png') });
+  await page.getByRole('button', { name: 'Undo point' }).click();
+  await expect(compactBar).toContainText('8 points');
+
+  await page.getByRole('button', { name: 'Expand territory editor' }).click();
+  await expect(name).toHaveValue('Queens East');
+  await expect(description).toHaveValue('Reported short-viewport regression fixture');
+  await expect(page.getByRole('button', { name: 'Stop Adding Points' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Finish Shape' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Clear' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save Boundary' })).toBeVisible();
+});
+
 for (const viewport of [
   { name: 'mobile portrait', width: 390, height: 844 },
   { name: 'mobile landscape', width: 844, height: 390 },

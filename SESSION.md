@@ -3,7 +3,7 @@
 ## Linked work
 
 - GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/173
-- Draft PR: pending
+- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/174
 - Branch: `codex/173-territory-editor-minimize`
 - Design: `docs/superpowers/specs/2026-08-14-territory-editor-minimize-design.md`
 - Plan: `docs/superpowers/plans/2026-08-15-territory-editor-minimize.md`

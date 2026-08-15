@@ -1,43 +1,40 @@
-# Session: Issue 173 Territory Editor Minimization
+# Session: Issue 175 Safari Territory Header Clipping
 
 ## Linked work
 
-- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/173
-- Draft PR: https://github.com/brycejohnson1417/Picc-web-app/pull/174
-- Branch: `codex/173-territory-editor-minimize`
-- Design: `docs/superpowers/specs/2026-08-14-territory-editor-minimize-design.md`
-- Plan: `docs/superpowers/plans/2026-08-15-territory-editor-minimize.md`
+- GitHub issue: https://github.com/brycejohnson1417/Picc-web-app/issues/175
+- Branch: `codex/175-safari-territory-header`
+- Draft PR: pending initial session commit
 
 ## Scope
 
-- Add a visible minimize control to the territory boundary editor.
-- Collapse to a one-row drawing bar above primary navigation.
-- Keep map-tap drawing active and preserve the entire unsaved draft.
-- Keep point count, Undo, and Expand usable while minimized.
-- Add mobile browser coverage for drawing, undo, and restore.
+- Keep the AppShell profile header and territory Map/List switch inside the visible viewport at the reported Safari-like desktop size.
+- Preserve the map's remaining-height layout and fixed primary navigation.
+- Add focused browser regression coverage and screenshot proof.
 
 ## Out of scope
 
-- Draggable or resizable sheets.
-- Persisting minimized state across editor sessions.
-- Territory API, geometry, persistence, or navigation changes.
+- Google Maps provider, controls, routing, or territory-data behavior.
+- API, persistence, schema, auth, environment, or production-data changes.
+- Browser preference changes or a territory-toolbar redesign.
 - Changes to `/Users/brycejohnson/Code/map-app`.
 
-## Constraints
+## Constraints and architecture check
 
-- RED-first browser test before production code.
-- Local presentation state only; do not duplicate territory draft state.
-- Start each newly opened editor expanded.
-- Preserve the fixed Finish, Clear, and Save action footer when expanded.
-- Keep the unrelated untracked `.agents/account-detail-redirect-ai-tab.png` untouched.
+- Surgical presentation fix against the existing `AppShell` and `TerritoryMobile` flex layout.
+- No new state or service boundary.
+- Keep the current mobile-first PWA shell and existing design-system spacing/control vocabulary.
+- Preserve the unrelated untracked `.agents/account-detail-redirect-ai-tab.png`.
+- Open PRs checked: #166, #144, #135, and #82. None owns the territory shell or territory E2E paths.
 
 ## Validation plan
 
-- At 390x844, minimize and verify the compact bar clears the map and bottom navigation.
-- While minimized, tap the map, observe point-count growth, Undo, and observe the count revert.
-- Expand and verify draft fields, points, drawing mode, and fixed actions are preserved.
-- Run focused territory Playwright, `npm run verify`, and full E2E.
+- RED first: reproduce the 1226x768 reported Safari-like viewport and assert the profile header, Map/List switch, map, and primary navigation all fit within the viewport.
+- Add a second short-desktop/zoom-resistant fit check if diagnosis confirms CSS-pixel scaling is involved.
+- Re-run existing mobile portrait, landscape, territory-editor, and subway-control coverage.
+- Run focused Playwright, `npm run verify`, and full `npm run test:e2e`.
+- Capture final desktop and mobile screenshots and inspect them visually.
 
 ## Current state
 
-RED failed waiting for the missing `Minimize territory editor` control. GREEN proves a real Google Map tap changes the minimized counter from 8 to 9 points, compact Undo returns it to 8, and Expand restores the full draft and drawing mode. Independent review findings were fixed with exact scroll restoration, focus transfer in both directions, and a polite live point-count status. After rebasing onto current `main`, the focused territory suite passes 6 tests; `npm run verify` passes with 202 unit tests and a production build; all 33 Playwright tests pass. Mobile proof: `test-results/territory-boundary-editor--373e4-mized-territory-drawing-bar-chromium/territory-minimized-mobile.png`. PR checks, merge, and production proof remain.
+Production Safari evidence confirms the profile header is present in the accessibility tree but visually clipped above the Map/List switch. Source diagnosis is in progress; no non-test source file has been edited.

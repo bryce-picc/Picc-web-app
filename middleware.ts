@@ -14,7 +14,7 @@ const isProtectedRoute = createRouteMatcher([
   '/api/(.*)',
 ]);
 const isApiRoute = createRouteMatcher(['/api/(.*)']);
-const isCronSyncRoute = createRouteMatcher(['/api/cron/notion-sync', '/api/cron/nabis-sync']);
+const isCronSyncRoute = createRouteMatcher(['/api/cron/notion-sync', '/api/cron/nabis-sync', '/api/cron/daily-briefing']);
 const isPublicWebhookRoute = createRouteMatcher(['/api/webhooks/notion']);
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 const secretKey = process.env.CLERK_SECRET_KEY ?? '';

@@ -291,6 +291,11 @@ test('keeps the contacts directory light and readable under dark device preferen
   await expect(desktopSurface).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await expect(desktopSurface).toHaveCSS('color', 'rgb(24, 33, 45)');
   await expect(header).toHaveCSS('background-color', 'rgb(241, 245, 249)');
+  const nextPageButton = page.getByRole('button', { name: 'Next', exact: true });
+  await expect(nextPageButton).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await nextPageButton.evaluate((button) => button.removeAttribute('disabled'));
+  await nextPageButton.hover();
+  await expect(nextPageButton).toHaveCSS('background-color', 'rgb(243, 246, 250)');
   if (process.env.PICC_EVIDENCE_DIR) {
     await page.screenshot({ path: `${process.env.PICC_EVIDENCE_DIR}/contacts-light-surface-desktop.png`, fullPage: true });
   }

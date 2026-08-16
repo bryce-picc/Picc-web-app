@@ -82,7 +82,7 @@ export function AdvancedDataTable<TData, TValue>({
             className="h-11 min-w-0 flex-1 border-[#cbd3df] bg-white text-[#18212d] placeholder:text-[#929baa] sm:max-w-[360px] dark:bg-white dark:text-[#18212d] dark:placeholder:text-[#929baa]"
           />
           {onExportCsv ? (
-            <Button variant="outline" className="h-11 min-w-[44px] shrink-0 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa]" onClick={onExportCsv} aria-label="Export CSV">
+            <Button variant="outline" className="h-11 min-w-[44px] shrink-0 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa] dark:border-[#cbd3df] dark:bg-white dark:text-[#263242] dark:hover:bg-[#f3f6fa]" onClick={onExportCsv} aria-label="Export CSV">
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -94,8 +94,8 @@ export function AdvancedDataTable<TData, TValue>({
         <div className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 sm:flex-row sm:items-center sm:justify-between">
           <span>{selectedCount} selected</span>
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" className="min-h-11 bg-white text-[#263242] hover:bg-[#edf2f7]">Tag</Button>
-            <Button size="sm" variant="secondary" className="min-h-11 bg-white text-[#263242] hover:bg-[#edf2f7]">Assign</Button>
+            <Button size="sm" variant="secondary" className="min-h-11 bg-white text-[#263242] hover:bg-[#edf2f7] dark:bg-white dark:text-[#263242] dark:hover:bg-[#edf2f7]">Tag</Button>
+            <Button size="sm" variant="secondary" className="min-h-11 bg-white text-[#263242] hover:bg-[#edf2f7] dark:bg-white dark:text-[#263242] dark:hover:bg-[#edf2f7]">Assign</Button>
             <Button size="sm" variant="danger" className="min-h-11">Delete</Button>
           </div>
         </div>
@@ -212,10 +212,10 @@ export function AdvancedDataTable<TData, TValue>({
           Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
         </p>
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="sm" className="min-h-11 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa]" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button variant="outline" size="sm" className="min-h-11 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa] dark:border-[#cbd3df] dark:bg-white dark:text-[#263242] dark:hover:bg-[#f3f6fa]" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             Previous
           </Button>
-          <Button variant="outline" size="sm" className="min-h-11 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa]" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button variant="outline" size="sm" className="min-h-11 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa] dark:border-[#cbd3df] dark:bg-white dark:text-[#263242] dark:hover:bg-[#f3f6fa]" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
           </Button>
         </div>

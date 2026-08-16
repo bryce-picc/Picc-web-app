@@ -34,3 +34,10 @@
 - Re-run cron authorization tests to confirm missing and incorrect secrets still fail closed.
 - Run `npm run verify`.
 - After an approved merge/deploy, verify a production scheduler invocation before claiming the incident resolved.
+
+## Current state
+
+- RED: the focused middleware regression observed `auth.protect()` called once for `/api/cron/daily-briefing` on the pre-fix implementation.
+- GREEN: the daily-briefing path now shares the existing exact cron-route exemption; focused middleware and cron-secret coverage pass (2 files, 5 tests).
+- `npm run verify`: passed lint, typecheck, 47 Vitest files / 203 tests, Prisma validation, and the production build.
+- Production remains unchanged pending approval-lane merge and deployment verification.

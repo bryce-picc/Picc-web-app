@@ -278,6 +278,34 @@ test('reviews Gmail suggestions before quick-adding a prefilled contact', async 
   await expect(dialog.getByLabel('Email')).toHaveValue('taylor@example.com');
 });
 
+test('keeps the contacts directory light and readable under dark device preferences', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/contacts');
+
+  const table = page.getByRole('table');
+  const header = table.locator('thead');
+  const desktopSurface = page.getByTestId('crm-directory-desktop');
+
+  await expect(table).toBeVisible();
+  await expect(desktopSurface).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(desktopSurface).toHaveCSS('color', 'rgb(24, 33, 45)');
+  await expect(header).toHaveCSS('background-color', 'rgb(241, 245, 249)');
+  if (process.env.PICC_EVIDENCE_DIR) {
+    await page.screenshot({ path: `${process.env.PICC_EVIDENCE_DIR}/contacts-light-surface-desktop.png`, fullPage: true });
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileSurface = page.getByTestId('crm-directory-mobile');
+  const mobileRecordSurface = mobileSurface.locator(':scope > *').first();
+  await expect(mobileSurface).toHaveCSS('color', 'rgb(24, 33, 45)');
+  await expect(mobileRecordSurface).toBeVisible();
+  await expect(mobileRecordSurface).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  if (process.env.PICC_EVIDENCE_DIR) {
+    await page.screenshot({ path: `${process.env.PICC_EVIDENCE_DIR}/contacts-light-surface-mobile.png`, fullPage: true });
+  }
+});
+
 test('lets the signed-in rep inspect and explicitly disconnect their Gmail', async ({ page }) => {
   let connected = true;
   await page.route('**/api/integrations/gmail', async (route) => {

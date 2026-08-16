@@ -93,7 +93,7 @@ export function ContactsTable({ rows, accounts }: { rows: ContactTableRow[]; acc
             <p className="break-all">{row.email}</p>
             <p>{row.phone}</p>
           </div>
-          <ContactQuickActions contact={row} accounts={accountsFor(row)} className="pt-1" />
+          <ContactQuickActions contact={row} accounts={accountsFor(row)} className="pt-1" labels="always" />
         </>
       )}
     />

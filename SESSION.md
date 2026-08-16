@@ -34,4 +34,13 @@
 
 ## Current state
 
-Issue claimed; implementation has not started.
+Implemented the light operational surface in the shared CRM data table. Explicit stale dark-mode row, header, hover, and mobile-card utilities were removed; the table now owns white/light-slate backgrounds and dark readable text under either device preference. Mobile Contacts actions now show the Email, Text, and Call labels instead of icons alone.
+
+Validation:
+
+- RED browser proof: the header rendered `oklch(0.208 0.042 265.755)` from `dark:bg-slate-900` under a dark device preference.
+- GREEN focused appearance regression: passed desktop and mobile under an emulated dark device preference.
+- Complete Contacts browser suite: 7 passed serially.
+- `npm run verify`: passed lint, typecheck, 46 Vitest files / 202 tests, Prisma validation, and production build.
+- Full browser suite: 34 passed serially; two unrelated territory tests could not create `.gm-style` because Google Maps did not load in this local environment. The Contacts suite and all non-map coverage passed.
+- Visual proof inspected with three isolated local contact records, then the local fixture was removed: `contacts-light-surface-desktop.png` and `contacts-light-surface-mobile.png`.

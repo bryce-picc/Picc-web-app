@@ -82,7 +82,7 @@ export function AdvancedDataTable<TData, TValue>({
             className="h-11 min-w-0 flex-1 border-[#cbd3df] bg-white text-[#18212d] placeholder:text-[#929baa] sm:max-w-[360px] dark:bg-white dark:text-[#18212d] dark:placeholder:text-[#929baa]"
           />
           {onExportCsv ? (
-            <Button variant="outline" className="h-11 min-w-[44px] shrink-0" onClick={onExportCsv} aria-label="Export CSV">
+            <Button variant="outline" className="h-11 min-w-[44px] shrink-0 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa] dark:border-[#cbd3df] dark:bg-white dark:text-[#263242] dark:hover:bg-[#f3f6fa]" onClick={onExportCsv} aria-label="Export CSV">
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -94,21 +94,21 @@ export function AdvancedDataTable<TData, TValue>({
         <div className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 sm:flex-row sm:items-center sm:justify-between">
           <span>{selectedCount} selected</span>
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" className="min-h-11">Tag</Button>
-            <Button size="sm" variant="secondary" className="min-h-11">Assign</Button>
+            <Button size="sm" variant="secondary" className="min-h-11 bg-white text-[#263242] hover:bg-[#edf2f7] dark:bg-white dark:text-[#263242] dark:hover:bg-[#edf2f7]">Tag</Button>
+            <Button size="sm" variant="secondary" className="min-h-11 bg-white text-[#263242] hover:bg-[#edf2f7] dark:bg-white dark:text-[#263242] dark:hover:bg-[#edf2f7]">Assign</Button>
             <Button size="sm" variant="danger" className="min-h-11">Delete</Button>
           </div>
         </div>
       )}
 
-      <div className="space-y-2 md:hidden">
+      <div className="space-y-2 text-[#18212d] md:hidden" data-testid="crm-directory-mobile">
         {table.getRowModel().rows?.length ? (
           table.getRowModel().rows.map((row) => {
             const rowHref = getRowHref?.(row.original);
             return (
               <article
                 key={row.id}
-                className={`space-y-2 rounded-xl border bg-white p-3 dark:bg-slate-950 ${rowHref ? 'cursor-pointer active:bg-slate-50 dark:active:bg-slate-900' : ''}`}
+                className={`space-y-2 rounded-xl border border-[#d8dee8] bg-white p-3 text-[#18212d] shadow-[0_1px_2px_rgba(24,33,45,0.04)] ${rowHref ? 'cursor-pointer transition-colors hover:bg-[#f8fafc] active:bg-[#eef3f8]' : ''}`}
                 role={rowHref ? 'link' : undefined}
                 tabIndex={rowHref ? 0 : undefined}
                 aria-label={rowHref ? rowAriaLabel?.(row.original) : undefined}
@@ -140,18 +140,18 @@ export function AdvancedDataTable<TData, TValue>({
             );
           })
         ) : (
-          <div className="rounded-xl border p-6 text-center text-slate-500">No results.</div>
+          <div className="rounded-xl border border-[#d8dee8] bg-white p-6 text-center text-[#697486]">No results.</div>
         )}
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border md:block">
-        <div className="max-h-[560px] overflow-auto">
+      <div className="hidden overflow-hidden rounded-xl border border-[#d8dee8] bg-white text-[#18212d] shadow-[0_1px_2px_rgba(24,33,45,0.04)] md:block" data-testid="crm-directory-desktop">
+        <div className="max-h-[560px] overflow-auto bg-white">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">
+            <thead className="sticky top-0 z-10 bg-[#f1f5f9] text-[#344052]">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="whitespace-nowrap border-b px-3 py-2 text-left font-semibold">
+                    <th key={header.id} className="whitespace-nowrap border-b border-[#d8dee8] px-3 py-2.5 text-left font-semibold">
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -169,8 +169,8 @@ export function AdvancedDataTable<TData, TValue>({
                       key={row.id}
                       data-state={row.getIsSelected() && 'selected'}
                       className={[
-                        idx % 2 === 0 ? 'bg-white dark:bg-slate-950' : 'bg-slate-50/50 dark:bg-slate-900/30',
-                        rowHref ? 'cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800/70' : '',
+                        idx % 2 === 0 ? 'bg-white' : 'bg-[#f8fafc]',
+                        rowHref ? 'cursor-pointer transition-colors hover:bg-[#eef3f8]' : '',
                       ].join(' ')}
                       role={rowHref ? 'link' : undefined}
                       tabIndex={rowHref ? 0 : undefined}
@@ -188,7 +188,7 @@ export function AdvancedDataTable<TData, TValue>({
                       }
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="border-b px-3 py-2 align-top">
+                        <td key={cell.id} className="border-b border-[#e2e7ee] px-3 py-2.5 align-top">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
@@ -212,10 +212,10 @@ export function AdvancedDataTable<TData, TValue>({
           Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
         </p>
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="sm" className="min-h-11" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button variant="outline" size="sm" className="min-h-11 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa] dark:border-[#cbd3df] dark:bg-white dark:text-[#263242] dark:hover:bg-[#f3f6fa]" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             Previous
           </Button>
-          <Button variant="outline" size="sm" className="min-h-11" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button variant="outline" size="sm" className="min-h-11 border-[#cbd3df] bg-white text-[#263242] hover:bg-[#f3f6fa] dark:border-[#cbd3df] dark:bg-white dark:text-[#263242] dark:hover:bg-[#f3f6fa]" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
           </Button>
         </div>

@@ -39,4 +39,9 @@
 ## Current state
 
 - Root-cause evidence: the Gmail migration exists at `prisma/migrations/202608141300_add_gmail_connections/migration.sql`, while the Vercel build command is only `npm run build`; the production browser reports the table absent.
+- RED confirmed: route coverage reproduced raw missing-table leakage; browser coverage reproduced the Settings card's endless loading state.
+- GREEN confirmed: Gmail status/suggestions return a stable 503 without Prisma details, and Settings renders a retryable setup state that recovers to the real connection control.
+- `npm run verify`: passed lint, typecheck, 48 Vitest files / 207 tests, Prisma validation, and production build.
+- Targeted Gmail browser flow: passed at 390x844 with error and recovered screenshots under `.agents/issue-181/`.
+- Full `npm run test:e2e`: 34 passed / 3 unrelated failures (`/home` timeout, Google Map unavailable in the Safari-shell test, subway reload timeout). Serial rerun passed `/home` and subway; the Google Map availability assertion remained failed and is outside this PR's owned paths.
 - No production schema changes have been run.
